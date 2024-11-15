@@ -9,4 +9,6 @@ add_executable(freshdiskann main.cpp
         GraphNode.cpp
         GraphNode.h
         Vector.cpp
-        Vector.h)
+        Vector.h
+        Graph.cpp
+        Graph.h)

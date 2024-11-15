@@ -8,11 +8,13 @@
 #include <vector>
 #include "GraphNode.h"
 #include "Vector.h"
-
+#include "Graph.h"
 
 class Index {
+    Graph _graph;
+public:
     std::pair<std::vector<GraphNode>, std::vector<GraphNode>> greedySearch(const GraphNode &s, const Vector &xq, size_t k, size_t searchListSize);
-
+    void insert(const Vector &xq, const GraphNode &s, size_t searchListSize, double alpha, size_t outDegreeBound);
 };
 
 
