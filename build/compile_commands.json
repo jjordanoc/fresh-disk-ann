@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/build",
+  "command": "/usr/bin/clang++ -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -mmacosx-version-min=14.6 -o CMakeFiles/freshdiskann.dir/main.cpp.o -c /Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/main.cpp",
+  "file": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/main.cpp",
+  "output": "CMakeFiles/freshdiskann.dir/main.cpp.o"
+},
+{
+  "directory": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/build",
+  "command": "/usr/bin/clang++ -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -mmacosx-version-min=14.6 -o CMakeFiles/freshdiskann.dir/GraphNode.cpp.o -c /Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/GraphNode.cpp",
+  "file": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/GraphNode.cpp",
+  "output": "CMakeFiles/freshdiskann.dir/GraphNode.cpp.o"
+},
+{
+  "directory": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/build",
+  "command": "/usr/bin/clang++ -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk -mmacosx-version-min=14.6 -o CMakeFiles/freshdiskann.dir/Index.cpp.o -c /Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/Index.cpp",
+  "file": "/Users/pierre/Documents/7Ciclo/EDA/proyecto/fresh-disk-ann/Index.cpp",
+  "output": "CMakeFiles/freshdiskann.dir/Index.cpp.o"
+}
+]
