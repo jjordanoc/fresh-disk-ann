@@ -154,3 +154,51 @@ void Index::robustPrune(const GraphNode &p, std::vector<GraphNode*> &v, double a
         }
     }
 }
+
+void Index::deleteNodes(const std::unordered_set<int>& nodesToDelete, double alpha, size_t outDegreeBound) {
+    // 1. Marca los nodos a eliminar: "cuando un punto p es eliminado, lo añadimos a DeleteList..."
+    for (const int nodeId : nodesToDelete) {
+        deleteList.insert(nodeId);
+    }
+
+    // 2. Consolidación: para cada nodo que tiene vecinos en DeleteList:
+    // "...actualizamos los vecindarios de los puntos con out-edges a estos nodos eliminados..."
+    for (auto& [id, node] : graphNodes) {
+        if (deleteList.find(id) != deleteList.end()) {
+            continue;
+        }
+
+        // Encuentra vecinos afectados por nodos eliminados:
+        // "D ← 𝑁out(𝑝) ∩ 𝐿𝐷"
+        std::unordered_set<int> deletedNeighbors;
+        for (GraphNode* outNeighbor : node->outNeighbors) {
+            if (deleteList.find(outNeighbor->id) != deleteList.end()) {
+                deletedNeighbors.insert(outNeighbor->id);
+            }
+        }
+
+        if (!deletedNeighbors.empty()) {
+            // "C ← 𝑁out(𝑝) \ D" Inicializamos la lista de candidatos
+            std::unordered_set<GraphNode*> candidates(node->outNeighbors.begin(), node->outNeighbors.end());
+
+            // "foreach 𝑣 ∈ D do C ← C ∪ 𝑁out(𝑣)"
+            for (int deletedNeighborId : deletedNeighbors) {
+                GraphNode* deletedNeighbor = graphNodes[deletedNeighborId];
+                candidates.insert(deletedNeighbor->outNeighbors.begin(), deletedNeighbor->outNeighbors.end());
+            }
+            
+            // "C ← C \ D"
+            for (int deletedNeighborId : deletedNeighbors) {
+                candidates.erase(graphNodes[deletedNeighborId]);
+            }
+
+            // Prune la lista de candidatos preservando la propiedad 𝛼−RNG:
+            // "𝑁out (𝑝) ← RobustPrune(𝑝, C, 𝛼, 𝑅)"
+            std::vector<GraphNode*> candidateList(candidates.begin(), candidates.end());
+            robustPrune(*node, candidateList, alpha, outDegreeBound);
+
+            // Actualiza los vecinos de salida del nodo con los resultados del prune
+            node->outNeighbors = candidateList;
+        }
+    }
+}
