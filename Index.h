@@ -1,21 +1,21 @@
-//
-// Created by Joaquin on 14/11/24.
-//
+#ifndef INDEX_H
+#define INDEX_H
 
-#ifndef FRESHDISKANN_INDEX_H
-#define FRESHDISKANN_INDEX_H
-
-#include <vector>
+#pragma once
 #include "GraphNode.h"
-#include "Vector.h"
-#include "Graph.h"
+#include <vector>
+#include <utility>
+#include <unordered_set>
+#include <algorithm>
 
 class Index {
-    Graph _graph;
 public:
-    std::pair<std::vector<GraphNode>, std::vector<GraphNode>> greedySearch(const GraphNode &s, const Vector &xq, size_t k, size_t searchListSize);
-    void insert(const Vector &xq, const GraphNode &s, size_t searchListSize, double alpha, size_t outDegreeBound);
+    std::pair<std::vector<GraphNode>, std::vector<GraphNode>> greedySearch(const GraphNode &s, const GraphNode &xq, size_t k, size_t searchListSize);
+    double distance(const GraphNode &node, const GraphNode &xq);
+    void robustPrune(const GraphNode &p, std::vector<GraphNode*> &v, double alpha, size_t outDegreeBound);
+private:
+
 };
 
 
-#endif //FRESHDISKANN_INDEX_H
+#endif //INDEX_H

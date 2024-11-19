@@ -1,5 +1,5 @@
 //
-// Created by Joaquin on 14/11/24.
+// Created by Juan Pedro on 18/11/2024.
 //
 
 #include "GraphNode.h"

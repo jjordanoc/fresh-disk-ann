@@ -1,28 +1,17 @@
-//
-// Created by Joaquin on 14/11/24.
-//
+#ifndef GRAPHNODE_H
+#define GRAPHNODE_H
 
-#ifndef FRESHDISKANN_GRAPHNODE_H
-#define FRESHDISKANN_GRAPHNODE_H
-
+#pragma once
 #include <vector>
 
 class GraphNode {
-    size_t id;
-    double distance;
-    bool expanded;
 public:
-    GraphNode(unsigned id, float distance) : id{id}, distance{distance}, expanded(false) {
-    }
+    int id;
+    std::vector<GraphNode*> inNeighbors;
+    std::vector<GraphNode*> outNeighbors;
+    std::vector<double> features;
 
-    inline bool operator<(const GraphNode &other) const {
-        return distance < other.distance || (distance == other.distance && id < other.id);
-    }
-
-    inline bool operator==(const GraphNode &other) const {
-        return (id == other.id);
-    }
+    GraphNode(int id, const std::vector<double>& features) : id(id), features(features) {}
 };
 
-
-#endif //FRESHDISKANN_GRAPHNODE_H
+#endif //GRAPHNODE_H
