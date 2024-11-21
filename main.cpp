@@ -45,6 +45,23 @@ void testGreedySearch() {
     values = {3.0, 5.0, 7.0};
     std::shared_ptr<GraphNode> node6 = std::make_shared<GraphNode>(6, values);
 
+    // Conectar los nodos
+    node1->outNeighbors.push_back(node2);
+    node2->inNeighbors.push_back(node1);
+
+    node2->outNeighbors.push_back(node3);
+    node3->inNeighbors.push_back(node2);
+
+    node3->outNeighbors.push_back(node4);
+    node4->inNeighbors.push_back(node3);
+
+    node4->outNeighbors.push_back(node5);
+    node5->inNeighbors.push_back(node4);
+
+    node5->outNeighbors.push_back(node6);
+    node6->inNeighbors.push_back(node5);
+
+
     // Crear el índice
     Index index;
 
