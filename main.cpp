@@ -1,6 +1,6 @@
 // main.cpp
 #include <iostream>
-#include "Index.h"
+#include "FreshVamanaIndex.h"
 
 void testNodeCreation() {
     std::vector<double> values = {1.0, 2.0, 3.0};
@@ -25,7 +25,7 @@ void testDistanceFunction() {
     std::shared_ptr<GraphNode> node1 = std::make_shared<GraphNode>(1, values);
     values = {4.0, 5.0, 6.0};
     std::shared_ptr<GraphNode> node2 = std::make_shared<GraphNode>(2, values);
-    Index index;
+    FreshVamanaIndex index;
     double dist = index.distance(node1, node2);
     std::cout << "Distance between Node 1 and Node 2: " << dist << std::endl;
 }
@@ -63,7 +63,7 @@ void testGreedySearch() {
 
 
     // Crear el índice
-    Index index;
+    FreshVamanaIndex index;
 
     // Mostrar las distancias entre nodos conectados
     std::cout << "Distancias entre nodos conectados:" << std::endl;
@@ -115,7 +115,7 @@ void testRobustPrune() {
     std::vector<std::shared_ptr<GraphNode>> candidates = {node2, node3, node4, node5, node6};
 
     // Crear el índice
-    Index index;
+    FreshVamanaIndex index;
 
     // Ejecutar robustPrune
     double alpha = 1.5;
@@ -129,6 +129,38 @@ void testRobustPrune() {
     }
 }
 
+void testInsert() {
+    std::vector<double> values = {1.0, 2.0, 3.0};
+    std::shared_ptr<GraphNode> node1 = std::make_shared<GraphNode>(1, values);
+    values = {4.0, 5.0, 6.0};
+    std::shared_ptr<GraphNode> node2 = std::make_shared<GraphNode>(2, values);
+    values = {7.0, 8.0, 9.0};
+    std::shared_ptr<GraphNode> node3 = std::make_shared<GraphNode>(3, values);
+    values = {1.0, 3.0, 5.0};
+    std::shared_ptr<GraphNode> node4 = std::make_shared<GraphNode>(4, values);
+    values = {2.0, 4.0, 6.0};
+    std::shared_ptr<GraphNode> node5 = std::make_shared<GraphNode>(5, values);
+    values = {3.0, 5.0, 7.0};
+    std::shared_ptr<GraphNode> node6 = std::make_shared<GraphNode>(6, values);
+    std::vector<std::shared_ptr<GraphNode>> nodes = {node1, node2, node3, node4, node5, node6};
+    FreshVamanaIndex index;
+    for (auto node : nodes) {
+        index.insert(node);
+    }
+
+    // test 1-NN para cada nodo
+    for (auto node : nodes) {
+        auto result = index.knnSearch(node, 2);
+        std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
+        for (auto closest : result) {
+            std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
+                      << index.distance(closest, node) << ")" << std::endl;
+        }
+    }
+
+}
+
+
 int main() {
     std::cout << "Testing Node Creation..." << std::endl;
     testNodeCreation();
@@ -141,6 +173,9 @@ int main() {
 
     std::cout << "\nTesting Robust Prune..." << std::endl;
     testRobustPrune();
+
+    std::cout << "\nTesting Insert and Search" << std::endl;
+    testInsert();
 
     return 0;
 }

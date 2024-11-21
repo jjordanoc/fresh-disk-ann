@@ -1,8 +1,8 @@
-# Basic methods (Index)
+# Basic methods (FreshVamanaIndex)
 
-Data is stored separately in a `_data_store` in class `Index`
+Data is stored separately in a `_data_store` in class `FreshVamanaIndex`
 
-The graph is stored in `_graph_store` in `Index`
+The graph is stored in `_graph_store` in `FreshVamanaIndex`
 
 ## Insert
 
@@ -15,7 +15,7 @@ Line 2858 in https://github.com/microsoft/DiskANN/blob/main/src/index.cpp
 3. Search and prune (GreedySearch + RobustPrune?) -> `pruned_list`
 4. Update Nout(p) using the nodes from `pruned_list`
     
-`prune` equivalent to `prune_neighbors (InMemoryGraph)` and `search_for_point_and_prune (Index)`.
+`prune` equivalent to `prune_neighbors (InMemoryGraph)` and `search_for_point_and_prune (FreshVamanaIndex)`.
 
 
 

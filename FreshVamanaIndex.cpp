@@ -1,12 +1,13 @@
-#include "Index.h"
+#include "FreshVamanaIndex.h"
 #include <cmath>
 #include <unordered_set>
 #include <algorithm>
+#include <cassert>
 
 
 
 
-double Index::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
+double FreshVamanaIndex::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
     double sum = 0.0;
     for (size_t i = 0; i < node->features.size(); ++i) {
         sum += std::pow(node->features[i] - xq->features[i], 2);
@@ -15,7 +16,7 @@ double Index::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNod
 }
 
 /*
-void Index::insert(const GraphNode &xp, const GraphNode &s, size_t searchListSize, double alpha, size_t outDegreeBound) {
+void FreshVamanaIndex::insert(const GraphNode &xp, const GraphNode &s, size_t searchListSize, double alpha, size_t outDegreeBound) {
     v <- ∅ // Lista de nodos candidatos
     ι <- ∅ // Lista de nodos expandidos
     [ι, v] <- greedySearch(s, p, k=1, searchListSize) // Se aplica greedySearch a s y p
@@ -26,7 +27,7 @@ void Index::insert(const GraphNode &xp, const GraphNode &s, size_t searchListSiz
         else:
             Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
  */
-void Index::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize, double alpha, size_t outDegreeBound) {
+void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize, double alpha, size_t outDegreeBound) {
 //    // v < - ∅ // Lista de nodos candidatos
 //    std::vector<const GraphNode*> candidateList;
 //    ι < - ∅ // Lista de nodos expandidos
@@ -54,9 +55,18 @@ void Index::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, 
 
 }
 
+void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp) {
+    graph.push_back(xp);
+    insert(xp, graph[0], 10, alpha, outDegreeBound);
+}
 
+
+std::vector<std::shared_ptr<GraphNode>> FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize) {
+    auto [closestK, candidateList] = greedySearch(graph[0], query, k, searchListSize);
+    return closestK;
+}
 /*
-std::pair<std::vector<GraphNode>, std::vector<GraphNode>> Index::greedySearch(const GraphNode &s, const Vector &xq, size_t k, size_t searchListSize) {
+std::pair<std::vector<GraphNode>, std::vector<GraphNode>> FreshVamanaIndex::greedySearch(const GraphNode &s, const Vector &xq, size_t k, size_t searchListSize) {
     s: start node, xq: query vector, k: number of neighbors to find, searchListSize: size of the search list
     ι <- {s} //Lista de nodos expandidos
     𝑉 <- ∅ //Lista de nodos candidatos
@@ -70,7 +80,7 @@ std::pair<std::vector<GraphNode>, std::vector<GraphNode>> Index::greedySearch(co
 }
 */
 std::pair<std::vector<std::shared_ptr<GraphNode>>, std::vector<std::shared_ptr<GraphNode>>>
-Index::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq, size_t k, size_t searchListSize) {
+FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq, size_t k, size_t searchListSize) {
     //ι <- {s}
     std::vector<std::shared_ptr<GraphNode>> expandedList = {s};
 
@@ -144,12 +154,14 @@ Index::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq,
     closestKNodes.assign(allCandidateNodes.begin(),
                          allCandidateNodes.begin() + numNodes);
 
+    assert(closestKNodes.size() == k);
+
     //return [closest k nodes in 𝑉], [all nodes in 𝑉]
     return {closestKNodes, allCandidateNodes};
 }
 
 /*
-void Index::robustPrune(const GraphNode &p, Vector &v, double alpha, size_t outDegreeBound) {
+void FreshVamanaIndex::robustPrune(const GraphNode &p, Vector &v, double alpha, size_t outDegreeBound) {
     v ← (v ∪ 𝑁out(𝑝)) \ {𝑝} // Agregamos a v (candidatos) los vecinos de p, sin incluir a p
     𝑁out(𝑝) <- ∅ // Vaciamos los vecinos de p
     while v != ∅: //Mientras siga habiendo candidatos
@@ -161,8 +173,8 @@ void Index::robustPrune(const GraphNode &p, Vector &v, double alpha, size_t outD
 }
 */
 
-void Index::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha,
-                        size_t outDegreeBound) {
+void FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha,
+                                   size_t outDegreeBound) {
     //v ← (v ∪ 𝑁out(𝑝)) \ {𝑝}
     for (auto neighbor: p->outNeighbors) {
         if (std::find(v.begin(), v.end(), neighbor) == v.end()) {
@@ -204,7 +216,7 @@ void Index::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_pt
     }
 }
 
-void Index::deleteNodes(const std::unordered_set<int> &nodesToDelete, double alpha, size_t outDegreeBound) {
+void FreshVamanaIndex::deleteNodes(const std::unordered_set<int> &nodesToDelete, double alpha, size_t outDegreeBound) {
     // 1. Marca los nodos a eliminar: "cuando un punto p es eliminado, lo añadimos a DeleteList..."
     for (const int nodeId: nodesToDelete) {
         deleteList.insert(nodeId);
