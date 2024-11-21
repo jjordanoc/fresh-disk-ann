@@ -11,6 +11,8 @@ public:
     std::vector<std::shared_ptr<GraphNode>> outNeighbors;
     std::vector<double> features;
 
+    void setUnionOutNeighbor(std::shared_ptr<GraphNode> newNode);
+
     GraphNode(int id, const std::vector<double>& features) : id(id), features(features) {}
 };
 

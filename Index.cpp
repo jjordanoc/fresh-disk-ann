@@ -3,6 +3,9 @@
 #include <unordered_set>
 #include <algorithm>
 
+
+
+
 double Index::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
     double sum = 0.0;
     for (size_t i = 0; i < node->features.size(); ++i) {
@@ -23,19 +26,33 @@ void Index::insert(const GraphNode &xp, const GraphNode &s, size_t searchListSiz
         else:
             Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
  */
-//void Index::insert(const GraphNode &xp, const GraphNode &s, size_t searchListSize, double alpha, size_t outDegreeBound) {
-////    // v < - ∅ // Lista de nodos candidatos
-////    std::vector<const GraphNode*> candidateList;
-////    ι < - ∅ // Lista de nodos expandidos
-//    auto [candidateList, expandedList] = greedySearch(s, xp, 1, searchListSize); // Se aplica greedySearch a s y p
-//    // set p's out neighbors to be Nout{p} = RobustPrune(s, v, alpha, outDegreeBound) // v son los nodos candidatos a ser los mas cercanos a p. Robust Prune asegura que p no tenga mas de R conexiones salientes y elimina conexiones redundantes.
-//    robustPrune(xp, candidateList, alpha, outDegreeBound);
-//    // for each j ∈ Nout{p} do: // Para cada nodo en los vecinos salientes de p
-//    //        if |Nout{j} ∪ {p}| > R then: // Si j ya tiene R vecinos salientes, aplicamos RobustPrune a j nuevamente, considerando la nueva conexion con p para asegurar que j no exceda el limite de R conexiones.
-//    //            Nout(j) <- RobustPrune(j, Nout(j) ∪ {p}, alpha, outDegreeBound)
-//    //        else:
-//    //            Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
-//}
+void Index::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize, double alpha, size_t outDegreeBound) {
+//    // v < - ∅ // Lista de nodos candidatos
+//    std::vector<const GraphNode*> candidateList;
+//    ι < - ∅ // Lista de nodos expandidos
+    auto [candidateList, expandedList] = greedySearch(s, xp, 1, searchListSize); // Se aplica greedySearch a s y p
+    // set p's out neighbors to be Nout{p} = RobustPrune(s, v, alpha, outDegreeBound) // v son los nodos candidatos a ser los mas cercanos a p. Robust Prune asegura que p no tenga mas de R conexiones salientes y elimina conexiones redundantes.
+    robustPrune(xp, candidateList, alpha, outDegreeBound);
+    // for each j ∈ Nout{p} do: // Para cada nodo en los vecinos salientes de p
+    for (auto outNeighbor : xp->outNeighbors) {
+        //        if |Nout{j} ∪ {p}| > R then: // Si j ya tiene R vecinos salientes, aplicamos RobustPrune a j nuevamente, considerando la nueva conexion con p para asegurar que j no exceda el limite de R conexiones.
+        if (outNeighbor->outNeighbors.size() + 1 > outDegreeBound) {
+            //            Nout(j) <- RobustPrune(j, Nout(j) ∪ {p}, alpha, outDegreeBound)
+            std::vector<std::shared_ptr<GraphNode>> nOutCopy = outNeighbor->outNeighbors;
+            if (std::find_if(nOutCopy.begin(), nOutCopy.end(), [&xp](std::shared_ptr<GraphNode> n) {
+                return n->id == xp->id;
+            }) == expandedList.end()) {
+                nOutCopy.push_back(xp);
+            }
+            robustPrune(outNeighbor, nOutCopy, alpha, outDegreeBound);
+        }
+        else {
+            //            Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
+            outNeighbor->setUnionOutNeighbor(xp);
+        }
+    }
+
+}
 
 
 /*
