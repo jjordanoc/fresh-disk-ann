@@ -65,7 +65,9 @@ Index::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq,
         // Encontrar todos los nodos en ι que no están en 𝑉
         std::vector<std::shared_ptr<GraphNode>> difference;
         for (auto node: expandedList) {
-            if (std::find(candidateList.begin(), candidateList.end(), node) == candidateList.end()) {
+            if (std::find_if(candidateList.begin(), candidateList.end(), [&node](std::shared_ptr<GraphNode> expanded) {
+                return expanded->id == node->id;
+            }) == candidateList.end()) {
                 difference.push_back(node);
             }
         }
@@ -84,7 +86,9 @@ Index::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq,
 
         //ι <- ι ∪ Nout{p*}
         for (auto neighbor: pStar->outNeighbors) {
-            if (std::find(expandedList.begin(), expandedList.end(), neighbor) == expandedList.end()) {
+            if (std::find_if(expandedList.begin(), expandedList.end(), [&neighbor](std::shared_ptr<GraphNode> expanded) {
+                return expanded->id == neighbor->id;
+            }) == expandedList.end()) {
                 expandedList.push_back(neighbor);
             }
         }
