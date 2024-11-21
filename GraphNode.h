@@ -7,8 +7,8 @@
 class GraphNode {
 public:
     int id;
-    std::vector<GraphNode*> inNeighbors;
-    std::vector<GraphNode*> outNeighbors;
+    std::vector<std::shared_ptr<GraphNode>> inNeighbors;
+    std::vector<std::shared_ptr<GraphNode>> outNeighbors;
     std::vector<double> features;
 
     GraphNode(int id, const std::vector<double>& features) : id(id), features(features) {}
