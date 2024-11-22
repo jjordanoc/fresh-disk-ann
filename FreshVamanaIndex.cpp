@@ -282,3 +282,7 @@ void FreshVamanaIndex::deleteNodes(const std::unordered_set<int> &nodesToDelete,
         }
     }
 }
+
+std::shared_ptr<GraphNode> FreshVamanaIndex::getNode(size_t id) {
+    return graph[id-1];
+}

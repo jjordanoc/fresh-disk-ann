@@ -184,7 +184,7 @@ int main() {
     // Test parameters
     const size_t NEIGHBOR_COUNT = 5,
             SEARCH_LIST_SIZE = 75,
-            N_TEST_POINTS = 5,
+            N_TEST_POINTS = 30,
             OUT_DEGREE_BOUND = 64;
     const double ALPHA = 1.2;
 
@@ -222,8 +222,12 @@ int main() {
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
         for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
             size_t foundNeighbor = timedResult.result[i]->id - 1;
-            std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance " << "(FOUND) "
-                      << foundNeighbor << std::endl;
+            auto foundNeighborNode = timedResult.result[i];
+            auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
+            std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
+                      << index.distance(trueNeighborNode, queryPoint) << "(FOUND) "
+                      << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
+                      << std::endl;
             // Count for recall
             if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
                 positiveCount++;

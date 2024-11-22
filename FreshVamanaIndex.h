@@ -26,6 +26,7 @@ public:
     FreshVamanaIndex() : alpha(DEFAULT_ALPHA), outDegreeBound(DEFAULT_OUT_DEGREE_BOUND) {}
     void insert(std::shared_ptr<GraphNode> xp, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
     std::vector<std::shared_ptr<GraphNode>> knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
+    std::shared_ptr<GraphNode> getNode(size_t id);
 private:
     std::unordered_map<int, std::shared_ptr<GraphNode>> graphNodes;
     std::unordered_set<int> deleteList;
