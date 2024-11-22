@@ -208,6 +208,7 @@ int main() {
     auto queries = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
 
     size_t testCnt = 0;
+    double avgRecall = 0;
     for (auto queryPoint: queries) {
         auto timedResult = FreshVamanaTestUtils::time_function<std::vector<std::shared_ptr<GraphNode>>>([&]() {
             return index.knnSearch(queryPoint, NEIGHBOR_COUNT, SEARCH_LIST_SIZE);
@@ -215,6 +216,7 @@ int main() {
         std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
         // Verify search correctness
         auto trueNeighbors = nearestMap[queryPoint->id];
+        trueNeighbors.resize(NEIGHBOR_COUNT);
         std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
         size_t positiveCount = 0;
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
@@ -227,14 +229,17 @@ int main() {
                 positiveCount++;
             }
         }
-        std::cout << "recall@" << NEIGHBOR_COUNT << ": " << (positiveCount)
+        double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
+        avgRecall += recall;
+        std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
                   << std::endl;
-
         testCnt++;
         if (testCnt == N_TEST_POINTS) {
             break;
         }
     }
+    std::cout << "avg recall@" << NEIGHBOR_COUNT << ": " << (avgRecall / (double) N_TEST_POINTS)
+              << std::endl;
 #endif
 
     return 0;
