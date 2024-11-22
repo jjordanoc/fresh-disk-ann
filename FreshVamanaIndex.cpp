@@ -33,7 +33,7 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<Gra
 //    ι < - ∅ // Lista de nodos expandidos
     auto [candidateList, expandedList] = greedySearch(s, xp, 1, searchListSize); // Se aplica greedySearch a s y p
     // set p's out neighbors to be Nout{p} = RobustPrune(s, v, alpha, outDegreeBound) // v son los nodos candidatos a ser los mas cercanos a p. Robust Prune asegura que p no tenga mas de R conexiones salientes y elimina conexiones redundantes.
-    robustPrune(xp, candidateList, alpha, outDegreeBound);
+    robustPrune(xp, expandedList, alpha, outDegreeBound);
     // for each j ∈ Nout{p} do: // Para cada nodo en los vecinos salientes de p
     for (auto outNeighbor : xp->outNeighbors) {
         //        if |Nout{j} ∪ {p}| > R then: // Si j ya tiene R vecinos salientes, aplicamos RobustPrune a j nuevamente, considerando la nueva conexion con p para asegurar que j no exceda el limite de R conexiones.
@@ -154,7 +154,7 @@ FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<Gra
     closestKNodes.assign(allCandidateNodes.begin(),
                          allCandidateNodes.begin() + numNodes);
 
-    assert(closestKNodes.size() == k);
+    assert(closestKNodes.size() == std::min(k, allCandidateNodes.size()));
 
     //return [closest k nodes in 𝑉], [all nodes in 𝑉]
     return {closestKNodes, allCandidateNodes};

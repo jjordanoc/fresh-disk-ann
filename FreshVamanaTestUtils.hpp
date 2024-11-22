@@ -60,4 +60,36 @@ namespace FreshVamanaTestUtils {
         }
         return data;
     }
+
+    template<typename Return>
+    struct TimedResult
+    {
+        Return result;
+        size_t duration;
+        TimedResult(Return &_result, size_t &_duration) : result(_result), duration(_duration) {}
+    };
+
+    template<>
+    struct TimedResult<void> {
+        size_t duration;
+        TimedResult(size_t &_duration) : duration(_duration) {}
+    };
+
+    template<typename Return, typename Fun, typename ...Args>
+    TimedResult<Return> time_function(const Fun &function, Args... args) {
+        auto start = std::chrono::steady_clock::now();
+        Return result = function(args...);
+        auto end = std::chrono::steady_clock::now();
+        size_t duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        return {result, duration};
+    }
+
+    template<typename Fun, typename ...Args>
+    TimedResult<void> time_function(const Fun &function, Args... args) {
+        auto start = std::chrono::steady_clock::now();
+        function(args...);
+        auto end = std::chrono::steady_clock::now();
+        size_t duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        return {duration};
+    }
 }

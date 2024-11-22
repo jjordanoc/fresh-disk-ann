@@ -1,5 +1,6 @@
 // main.cpp
 #include <iostream>
+#include <chrono>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
 
@@ -145,15 +146,15 @@ void testInsert() {
     std::shared_ptr<GraphNode> node6 = std::make_shared<GraphNode>(6, values);
     std::vector<std::shared_ptr<GraphNode>> nodes = {node1, node2, node3, node4, node5, node6};
     FreshVamanaIndex index;
-    for (auto node : nodes) {
+    for (auto node: nodes) {
         index.insert(node);
     }
 
     // test 1-NN para cada nodo
-    for (auto node : nodes) {
+    for (auto node: nodes) {
         auto result = index.knnSearch(node, 2);
         std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
-        for (auto closest : result) {
+        for (auto closest: result) {
             std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
                       << index.distance(closest, node) << ")" << std::endl;
         }
@@ -163,33 +164,55 @@ void testInsert() {
 
 
 int main() {
-//    std::cout << "Testing Node Creation..." << std::endl;
-//    testNodeCreation();
-//
-//    std::cout << "\nTesting Distance Function..." << std::endl;
-//    testDistanceFunction();
-//
-//    std::cout << "\nTesting Greedy Search..." << std::endl;
-//    testGreedySearch();
-//
-//    std::cout << "\nTesting Robust Prune..." << std::endl;
-//    testRobustPrune();
-//
-//    std::cout << "\nTesting Insert and Search" << std::endl;
-//    testInsert();
-//
-    auto data = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
+#ifdef DEBUG
+    std::cout << "Testing Node Creation..." << std::endl;
+    testNodeCreation();
 
-    for (auto val : data[0]->features) {
-        std::cout << val << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "\nTesting Distance Function..." << std::endl;
+    testDistanceFunction();
 
-    auto nearest = FreshVamanaTestUtils::loadNearestGroundTruth("siftsmall_groundtruth.csv");
-    for (auto n : nearest[1]) {
-        std::cout << n << " ";
+    std::cout << "\nTesting Greedy Search..." << std::endl;
+    testGreedySearch();
+
+    std::cout << "\nTesting Robust Prune..." << std::endl;
+    testRobustPrune();
+
+    std::cout << "\nTesting Insert and Search" << std::endl;
+    testInsert();
+#else
+    FreshVamanaIndex index;
+
+    auto dataset = FreshVamanaTestUtils::loadDataset("siftsmall_base.csv");
+
+    std::cout << "Loaded dataset with " << dataset.size() << " entries" << std::endl;
+
+    auto time = FreshVamanaTestUtils::time_function([&]() {
+        for (auto dataPoint: dataset) {
+            index.insert(dataPoint);
+        }
+    });
+
+    std::cout << "Insertion took " << time.duration << " ms" << std::endl;
+
+    auto nearestMap = FreshVamanaTestUtils::loadNearestGroundTruth("siftsmall_groundtruth.csv");
+
+    // Test queries
+    auto queries = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
+
+    for (auto queryPoint: queries) {
+        auto timedResult = FreshVamanaTestUtils::time_function<std::vector<std::shared_ptr<GraphNode>>>([&]() {
+            return index.knnSearch(queryPoint, 5, 15);
+        });
+        std::cout << "Search took " << time.duration << " ms" << std::endl;
+        // Verify search correctness
+        auto trueNeighbors = nearestMap[queryPoint->id];
+        std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
+        for (size_t i = 0; i < trueNeighbors.size(); ++i) {
+            std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance " << "(FOUND) "
+                      << timedResult.result[i]->id - 1 << std::endl;
+        }
     }
-    std::cout << std::endl;
+#endif
 
     return 0;
 }
