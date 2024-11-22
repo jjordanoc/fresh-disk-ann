@@ -184,7 +184,7 @@ int main() {
     // Test parameters
     const size_t NEIGHBOR_COUNT = 5,
             SEARCH_LIST_SIZE = 75,
-            N_TEST_POINTS = 30,
+            N_TEST_POINTS = 100,
             OUT_DEGREE_BOUND = 64;
     const double ALPHA = 1.2;
 
@@ -196,7 +196,7 @@ int main() {
 
     auto time = FreshVamanaTestUtils::time_function([&]() {
         for (auto dataPoint: dataset) {
-            index.insert(dataPoint);
+            index.insert(dataPoint, SEARCH_LIST_SIZE, false);
         }
     });
 
