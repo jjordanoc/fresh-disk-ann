@@ -7,4 +7,5 @@ add_executable(freshdiskann main.cpp
         GraphNode.cpp
         GraphNode.h
         FreshVamanaIndex.cpp
-        FreshVamanaIndex.h)
+        FreshVamanaIndex.h
+        FreshVamanaTestUtils.hpp)

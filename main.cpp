@@ -1,5 +1,6 @@
 // main.cpp
 #include <iostream>
+#include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
 
 void testNodeCreation() {
@@ -162,20 +163,27 @@ void testInsert() {
 
 
 int main() {
-    std::cout << "Testing Node Creation..." << std::endl;
-    testNodeCreation();
+//    std::cout << "Testing Node Creation..." << std::endl;
+//    testNodeCreation();
+//
+//    std::cout << "\nTesting Distance Function..." << std::endl;
+//    testDistanceFunction();
+//
+//    std::cout << "\nTesting Greedy Search..." << std::endl;
+//    testGreedySearch();
+//
+//    std::cout << "\nTesting Robust Prune..." << std::endl;
+//    testRobustPrune();
+//
+//    std::cout << "\nTesting Insert and Search" << std::endl;
+//    testInsert();
+//
+    auto data = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
 
-    std::cout << "\nTesting Distance Function..." << std::endl;
-    testDistanceFunction();
-
-    std::cout << "\nTesting Greedy Search..." << std::endl;
-    testGreedySearch();
-
-    std::cout << "\nTesting Robust Prune..." << std::endl;
-    testRobustPrune();
-
-    std::cout << "\nTesting Insert and Search" << std::endl;
-    testInsert();
+    for (auto val : data[1].features) {
+        std::cout << val << " ";
+    }
+    std::cout << std::endl;
 
     return 0;
 }
