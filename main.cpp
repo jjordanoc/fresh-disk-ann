@@ -180,8 +180,14 @@ int main() {
 //
     auto data = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
 
-    for (auto val : data[1].features) {
+    for (auto val : data[0]->features) {
         std::cout << val << " ";
+    }
+    std::cout << std::endl;
+
+    auto nearest = FreshVamanaTestUtils::loadNearestGroundTruth("siftsmall_groundtruth.csv");
+    for (auto n : nearest[1]) {
+        std::cout << n << " ";
     }
     std::cout << std::endl;
 
