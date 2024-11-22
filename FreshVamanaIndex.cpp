@@ -3,8 +3,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <cassert>
-
-
+#include <random>
 
 
 double FreshVamanaIndex::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
@@ -27,7 +26,8 @@ void FreshVamanaIndex::insert(const GraphNode &xp, const GraphNode &s, size_t se
         else:
             Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
  */
-void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize, double alpha, size_t outDegreeBound) {
+void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize,
+                              double alpha, size_t outDegreeBound) {
 //    // v < - ∅ // Lista de nodos candidatos
 //    std::vector<const GraphNode*> candidateList;
 //    ι < - ∅ // Lista de nodos expandidos
@@ -35,7 +35,7 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<Gra
     // set p's out neighbors to be Nout{p} = RobustPrune(s, v, alpha, outDegreeBound) // v son los nodos candidatos a ser los mas cercanos a p. Robust Prune asegura que p no tenga mas de R conexiones salientes y elimina conexiones redundantes.
     robustPrune(xp, expandedList, alpha, outDegreeBound);
     // for each j ∈ Nout{p} do: // Para cada nodo en los vecinos salientes de p
-    for (auto outNeighbor : xp->outNeighbors) {
+    for (auto outNeighbor: xp->outNeighbors) {
         //        if |Nout{j} ∪ {p}| > R then: // Si j ya tiene R vecinos salientes, aplicamos RobustPrune a j nuevamente, considerando la nueva conexion con p para asegurar que j no exceda el limite de R conexiones.
         if (outNeighbor->outNeighbors.size() + 1 > outDegreeBound) {
             //            Nout(j) <- RobustPrune(j, Nout(j) ∪ {p}, alpha, outDegreeBound)
@@ -46,8 +46,7 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<Gra
                 nOutCopy.push_back(xp);
             }
             robustPrune(outNeighbor, nOutCopy, alpha, outDegreeBound);
-        }
-        else {
+        } else {
             //            Nout(j) <- Nout(j) ∪ {p} // Si j no excede el limite de R conexiones, simplemente agregamos la conexion con p
             outNeighbor->setUnionOutNeighbor(xp);
         }
@@ -55,16 +54,32 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<Gra
 
 }
 
-void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp) {
+void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, size_t searchListSize, bool chooseRandom) {
     graph.push_back(xp);
-    insert(xp, graph[0], 10, alpha, outDegreeBound);
+    auto startingNode = graph[0];
+    if (chooseRandom) {
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> uniform(0,graph.size() - 1);
+        startingNode = graph[uniform(rng)];
+    }
+    insert(xp, startingNode, searchListSize, alpha, outDegreeBound);
 }
 
 
-std::vector<std::shared_ptr<GraphNode>> FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize) {
-    auto [closestK, candidateList] = greedySearch(graph[0], query, k, searchListSize);
+std::vector<std::shared_ptr<GraphNode>>
+FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize, bool chooseRandom) {
+    auto startingNode = graph[0];
+    if (chooseRandom) {
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> uniform(0,graph.size() - 1);
+        startingNode = graph[uniform(rng)];
+    }
+    auto [closestK, candidateList] = greedySearch(startingNode, query, k, searchListSize);
     return closestK;
 }
+
 /*
 std::pair<std::vector<GraphNode>, std::vector<GraphNode>> FreshVamanaIndex::greedySearch(const GraphNode &s, const Vector &xq, size_t k, size_t searchListSize) {
     s: start node, xq: query vector, k: number of neighbors to find, searchListSize: size of the search list
@@ -80,7 +95,8 @@ std::pair<std::vector<GraphNode>, std::vector<GraphNode>> FreshVamanaIndex::gree
 }
 */
 std::pair<std::vector<std::shared_ptr<GraphNode>>, std::vector<std::shared_ptr<GraphNode>>>
-FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq, size_t k, size_t searchListSize) {
+FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq, size_t k,
+                               size_t searchListSize) {
     //ι <- {s}
     std::vector<std::shared_ptr<GraphNode>> expandedList = {s};
 
@@ -113,9 +129,10 @@ FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<Gra
 
         //ι <- ι ∪ Nout{p*}
         for (auto neighbor: pStar->outNeighbors) {
-            if (std::find_if(expandedList.begin(), expandedList.end(), [&neighbor](std::shared_ptr<GraphNode> expanded) {
-                return expanded->id == neighbor->id;
-            }) == expandedList.end()) {
+            if (std::find_if(expandedList.begin(), expandedList.end(),
+                             [&neighbor](std::shared_ptr<GraphNode> expanded) {
+                                 return expanded->id == neighbor->id;
+                             }) == expandedList.end()) {
                 expandedList.push_back(neighbor);
             }
         }
@@ -173,8 +190,9 @@ void FreshVamanaIndex::robustPrune(const GraphNode &p, Vector &v, double alpha, 
 }
 */
 
-void FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha,
-                                   size_t outDegreeBound) {
+void
+FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha,
+                              size_t outDegreeBound) {
     //v ← (v ∪ 𝑁out(𝑝)) \ {𝑝}
     for (auto neighbor: p->outNeighbors) {
         if (std::find(v.begin(), v.end(), neighbor) == v.end()) {

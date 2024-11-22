@@ -77,10 +77,10 @@ namespace FreshVamanaTestUtils {
 
     template<typename Return, typename Fun, typename ...Args>
     TimedResult<Return> time_function(const Fun &function, Args... args) {
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::steady_clock ::now();
         Return result = function(args...);
         auto end = std::chrono::steady_clock::now();
-        size_t duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        size_t duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         return {result, duration};
     }
 
@@ -89,7 +89,7 @@ namespace FreshVamanaTestUtils {
         auto start = std::chrono::steady_clock::now();
         function(args...);
         auto end = std::chrono::steady_clock::now();
-        size_t duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        size_t duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         return {duration};
     }
 }

@@ -180,7 +180,14 @@ int main() {
     std::cout << "\nTesting Insert and Search" << std::endl;
     testInsert();
 #else
-    FreshVamanaIndex index;
+    // Test parameters
+    const size_t NEIGHBOR_COUNT = 5,
+            SEARCH_LIST_SIZE = 75,
+            N_TEST_POINTS = 5,
+            OUT_DEGREE_BOUND = 64;
+    const double ALPHA = 1.2;
+
+    FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND);
 
     auto dataset = FreshVamanaTestUtils::loadDataset("siftsmall_base.csv");
 
@@ -199,17 +206,22 @@ int main() {
     // Test queries
     auto queries = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
 
+    size_t testCnt = 0;
     for (auto queryPoint: queries) {
         auto timedResult = FreshVamanaTestUtils::time_function<std::vector<std::shared_ptr<GraphNode>>>([&]() {
-            return index.knnSearch(queryPoint, 5, 15);
+            return index.knnSearch(queryPoint, NEIGHBOR_COUNT, SEARCH_LIST_SIZE);
         });
-        std::cout << "Search took " << time.duration << " ms" << std::endl;
+        std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
         // Verify search correctness
         auto trueNeighbors = nearestMap[queryPoint->id];
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
-        for (size_t i = 0; i < trueNeighbors.size(); ++i) {
+        for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance " << "(FOUND) "
                       << timedResult.result[i]->id - 1 << std::endl;
+        }
+        testCnt++;
+        if (testCnt == N_TEST_POINTS) {
+            break;
         }
     }
 #endif
