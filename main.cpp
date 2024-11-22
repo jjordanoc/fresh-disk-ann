@@ -1,6 +1,7 @@
 // main.cpp
 #include <iostream>
 #include <chrono>
+#include <set>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
 
@@ -214,11 +215,21 @@ int main() {
         std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
         // Verify search correctness
         auto trueNeighbors = nearestMap[queryPoint->id];
+        std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
+        size_t positiveCount = 0;
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
         for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
+            size_t foundNeighbor = timedResult.result[i]->id - 1;
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance " << "(FOUND) "
-                      << timedResult.result[i]->id - 1 << std::endl;
+                      << foundNeighbor << std::endl;
+            // Count for recall
+            if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
+                positiveCount++;
+            }
         }
+        std::cout << "recall@" << NEIGHBOR_COUNT << ": " << (positiveCount)
+                  << std::endl;
+
         testCnt++;
         if (testCnt == N_TEST_POINTS) {
             break;
