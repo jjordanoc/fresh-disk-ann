@@ -23,7 +23,7 @@ public:
     std::shared_ptr<GraphNode> retrieveNode(size_t nodeId);
 
     void loadDatasetAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI); // Load CSV and Store (Test)
-
+    void loadDatasetAndcreateConectionsAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI);// Load CSV, create Neighbours and Store (Test)
 
 };
 #endif //PRECISIONLTI_H

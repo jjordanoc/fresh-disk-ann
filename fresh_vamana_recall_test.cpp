@@ -8,7 +8,7 @@
 #include <set>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
-
+/*
 
 int main() {
     // Test parameters (annotated paper values)
@@ -91,3 +91,4 @@ int main() {
 
     return 0;
 }
+*/

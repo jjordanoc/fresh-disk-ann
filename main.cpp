@@ -186,6 +186,31 @@ int main() {
     testInsert();
 #else
 
+    PrecisionLTI precisionLTI("graph_nodes.dat", 10);
+
+    // Load dataset and store nodes
+    precisionLTI.loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", precisionLTI);
+
+    std::cout << "======================================================================" << std::endl;
+    std::cout << "======================================================================" << std::endl;
+    std::cout << "======================================================================" << std::endl;
+    std::cout << "======================================================================" << std::endl;
+
+    // Retrieve and print the features and connections of the first 5 nodes
+    for (size_t i = 1; i <= 5; i++) {
+        std::cout << "Retrieving node with ID: " << i << " | Features: ";
+        std::shared_ptr<GraphNode> retrievedNode = precisionLTI.retrieveNode(i);
+        for (const auto &feature : retrievedNode->features) {
+            std::cout << feature << " ";
+        }
+        std::cout << "| Connections: ";
+        for (const auto &neighbor : retrievedNode->outNeighbors) {
+            std::cout << neighbor->id << " ";
+        }
+        std::cout << std::endl;
+    }
+
+
     /*
     PrecisionLTI precisionLTI("graph_nodes.dat", 10);
 
