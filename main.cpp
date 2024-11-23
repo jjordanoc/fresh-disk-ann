@@ -181,12 +181,12 @@ int main() {
     std::cout << "\nTesting Insert and Search" << std::endl;
     testInsert();
 #else
-    // Test parameters
-    const size_t NEIGHBOR_COUNT = 5,
-            SEARCH_LIST_SIZE = 75,
+    // Test parameters (annotated paper values)
+    const size_t NEIGHBOR_COUNT = 5, // 5
+            SEARCH_LIST_SIZE = 30, // 75
             N_TEST_POINTS = 100,
-            OUT_DEGREE_BOUND = 64;
-    const double ALPHA = 1.2;
+            OUT_DEGREE_BOUND = 64; // 64
+    const double ALPHA = 1.2; // 1.2
 
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND);
 

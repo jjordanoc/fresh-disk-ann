@@ -240,7 +240,7 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
     // add to delete list
     deleteList.insert(xp);
     // 1-10% of the index size
-    if (deleteAccumulationFactor) {
+    if (deleteAccumulationFactor * graph.size() >= deleteList.size()) {
         deleteConsolidation();
     }
 }

@@ -25,7 +25,7 @@ public:
     void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound);
 
     // methods
-    FreshVamanaIndex(const double alpha = DEFAULT_ALPHA, const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND, const double deleteAcumulationFactor = DEFAULT_DELETE_ACCUMULATION_FACTOR) : alpha(alpha), outDegreeBound(outDegreeBound), deleteAccumulationFactor(deleteAccumulationFactor) {}
+    FreshVamanaIndex(const double alpha = DEFAULT_ALPHA, const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND, const double deleteAccumulationFactor = DEFAULT_DELETE_ACCUMULATION_FACTOR) : alpha(alpha), outDegreeBound(outDegreeBound), deleteAccumulationFactor(deleteAccumulationFactor) {}
 //    FreshVamanaIndex() : alpha(DEFAULT_ALPHA), outDegreeBound(DEFAULT_OUT_DEGREE_BOUND) {}
     void deleteConsolidation();
     void deleteNode(std::shared_ptr<GraphNode> xp);
