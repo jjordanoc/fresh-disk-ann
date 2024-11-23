@@ -13,8 +13,8 @@ void CompressedLTI::productQuantization(std::shared_ptr<GraphNode> node, size_t 
     compressedNode->id = node->id; //Asignar el ID del nodo original al nodo comprimido
 
     //Simular la compresión generando bytes aleatorios (//todo: ESTO SE DEBERIA CAMBIAR, YA QUE NO ESTAMOS UTILIZANDO PRODUCT QUANTIZATION)
-    std::vector<uint8_t> compressedData(maxBytes);
-    std::generate(compressedData.begin(), compressedData.end(), std::rand);
+    // Compress by truncating the features to maxBytes
+    std::vector<uint8_t> compressedData(node->features.begin(), node->features.begin() + std::min(maxBytes, node->features.size()));
 
     compressedNode->compressedFeatures = compressedData; //Asignar los datos comprimidos al nodo comprimido
     compressedGraphNodes[node->id] = compressedNode; //Guardar el nodo comprimido en el mapa de nodos comprimidos

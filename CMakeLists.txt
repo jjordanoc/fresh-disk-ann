@@ -21,9 +21,5 @@ add_executable(freshdiskann main.cpp
         "FreshDiskANN Components/PrecisionLTI.h"
         "FreshDiskANN Components/DeleteList.cpp"
         "FreshDiskANN Components/DeleteList.h"
-        "FreshDiskANN Components/RWTempIndex.cpp"
-        "FreshDiskANN Components/RWTempIndex.h"
-        "FreshDiskANN Components/ROTempIndex.cpp"
-        "FreshDiskANN Components/ROTempIndex.h"
         FreshVamanaTestUtils.hpp
         fresh_vamana_recall_test.cpp)

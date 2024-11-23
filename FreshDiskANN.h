@@ -8,39 +8,22 @@
 
 #include "FreshDiskANN Components/CompressedLTI.h"
 #include "FreshDiskANN Components/PrecisionLTI.h"
-#include "FreshDiskANN Components/ROTempIndex.h"
-#include "FreshDiskANN Components/RWTempIndex.h"
 #include "FreshDiskANN Components/DeleteList.h"
 
-class FreshDiskANN {
+#include "FreshVamanaIndex.h"
 
-    constexpr static const double DEFAULT_ALPHA = 1.2;
-    constexpr static const size_t DEFAULT_OUT_DEGREE_BOUND = 10;
-    constexpr static const size_t DEFAULT_SEARCH_LIST_SIZE = 10;
-    constexpr static const char* DEFAULT_FILE_PATH_PRECISION_LTI = "graph_nodes.dat";
+class FreshDiskANN {
 
 private:
     const double alpha;
     const size_t outDegreeBound;
-    /*LTI RAM-SSD
-     * Insertions and deletions do not affect the LTI in real time.
-     *Tiene 2 partes
-        *   CompressedLTI (RAM)
-            *   Almacena los puntos en su versión comprimida (Product Quantization: 25-32 bytes).
-        *   PrecisionLTI (SSD)
-            *   Almacena los puntos en su versión de precisión completa.
-            *   Almacena las conexiones de cada punto en el grafo.
-            *   Dividido en bloques de tamaño fijo (4kB).
-                *   El vector de coordenadas completo de cada punto se almacena en el bloque.
-                *   Los outNeighbours de cada punto se almacenan en el resto del bloque.
-                    *   Si un punto tiene menos vecinos (outNeighbours) que el maximo permitido (outDegreeBound), se rellena con 0s para completar los 4kB.
 
-     */
     CompressedLTI compressedLTI; //RAM
     PrecisionLTI precisionLTI; //SSD
 
-    RO_TempIndex roTempIndex; //RAM
-    RW_TempIndex rwTempIndex; //RAM
+    //Instancias del FreshVamanaIndex
+    std::shared_ptr<FreshVamanaIndex> roTempIndex; //RAM
+    std::shared_ptr<FreshVamanaIndex> rwTempIndex; //RAM
 
     DeleteList deleteList; //RAM
 
@@ -52,9 +35,20 @@ private:
 
 public:
 
+    static const std::string DEFAULT_FILE_PATH_PRECISION_LTI;
+    static const size_t DEFAULT_OUT_DEGREE_BOUND;
+    static const double DEFAULT_ALPHA;
+    static const double DEFAULT_DELETE_ACCUMULATION_FACTOR;
+    static const size_t DEFAULT_SEARCH_LIST_SIZE;
+
     //Constructors
-    FreshDiskANN(const double alpha, const size_t outDegreeBound) : alpha(alpha), outDegreeBound(outDegreeBound), precisionLTI(DEFAULT_FILE_PATH_PRECISION_LTI, outDegreeBound) {}
-    FreshDiskANN() : alpha(DEFAULT_ALPHA), outDegreeBound(DEFAULT_OUT_DEGREE_BOUND), precisionLTI(DEFAULT_FILE_PATH_PRECISION_LTI, DEFAULT_OUT_DEGREE_BOUND) {}
+    FreshDiskANN(const double alpha = DEFAULT_ALPHA , const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND) : alpha(alpha), outDegreeBound(outDegreeBound), precisionLTI(DEFAULT_FILE_PATH_PRECISION_LTI, outDegreeBound) {}
+
+    //Methods
+
+    //Insert (xp): Afecta solo al RW-TempIndex. Algoritmo 2
+    void insert(std::shared_ptr<GraphNode> p, std::shared_ptr<GraphNode> s, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, double alpha = DEFAULT_ALPHA, size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND);
+
 
     //Insert (xp): Afecta solo al RW-TempIndex. Algoritmo 2
     //Delete (p): Los puntos que se quieren eliminar se añaden a la DeleteList. No se eliminan inmediatamente del LTI ni del TempIndex, pero no aparecerán en resultados de búsqueda.
@@ -75,6 +69,21 @@ public:
 
 };
 
+
+/*LTI RAM-SSD
+ * Insertions and deletions do not affect the LTI in real time.
+ *Tiene 2 partes
+    *   CompressedLTI (RAM)
+        *   Almacena los puntos en su versión comprimida (Product Quantization: 25-32 bytes).
+    *   PrecisionLTI (SSD)
+        *   Almacena los puntos en su versión de precisión completa.
+        *   Almacena las conexiones de cada punto en el grafo.
+        *   Dividido en bloques de tamaño fijo (4kB).
+            *   El vector de coordenadas completo de cada punto se almacena en el bloque.
+            *   Los outNeighbours de cada punto se almacenan en el resto del bloque.
+                *   Si un punto tiene menos vecinos (outNeighbours) que el maximo permitido (outDegreeBound), se rellena con 0s para completar los 4kB.
+
+ */
 
 
 

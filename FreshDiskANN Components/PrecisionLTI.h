@@ -15,7 +15,7 @@ private:
     std::string filePath;
     size_t outDegreeBound;
 public:
-    PrecisionLTI(const std::string &filePath, size_t outDegreeBound)
+    PrecisionLTI(std::string filePath, size_t outDegreeBound)
         : filePath(filePath), outDegreeBound(outDegreeBound) {}
 
 
