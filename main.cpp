@@ -19,8 +19,7 @@ void testNodeCreation() {
     for (const auto &feature: node2->features) {
         std::cout << feature << " ";
     }
-    std::cout << "\nNode 1 Out Neighbors: " << node1->outNeighbors.size() << ", Node 2 In Neighbors: "
-              << node2->inNeighbors.size() << std::endl;
+    std::cout << "\nNode 1 Out Neighbors: " << node1->outNeighbors.size() << std::endl;
 }
 
 void testDistanceFunction() {
@@ -50,19 +49,14 @@ void testGreedySearch() {
 
     // Conectar los nodos
     node1->outNeighbors.push_back(node2);
-    node2->inNeighbors.push_back(node1);
 
     node2->outNeighbors.push_back(node3);
-    node3->inNeighbors.push_back(node2);
 
     node3->outNeighbors.push_back(node4);
-    node4->inNeighbors.push_back(node3);
 
     node4->outNeighbors.push_back(node5);
-    node5->inNeighbors.push_back(node4);
 
     node5->outNeighbors.push_back(node6);
-    node6->inNeighbors.push_back(node5);
 
 
     // Crear el índice

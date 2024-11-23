@@ -3,11 +3,11 @@
 
 #pragma once
 #include <vector>
+#include <memory>
 
 class GraphNode {
 public:
     int id;
-    std::vector<std::shared_ptr<GraphNode>> inNeighbors;
     std::vector<std::shared_ptr<GraphNode>> outNeighbors;
     std::vector<double> features;
     bool deleted;
