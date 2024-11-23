@@ -225,7 +225,7 @@ int main() {
             auto foundNeighborNode = timedResult.result[i];
             auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
-                      << index.distance(trueNeighborNode, queryPoint) << "(FOUND) "
+                      << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
                       << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
                       << std::endl;
             // Count for recall

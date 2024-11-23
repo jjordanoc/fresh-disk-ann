@@ -7,3 +7,7 @@ void GraphNode::setUnionOutNeighbor(std::shared_ptr<GraphNode> newNode) {
         outNeighbors.push_back(newNode);
     }
 }
+
+bool GraphNode::operator<(const GraphNode &rhs) const {
+    return id < rhs.id;
+}

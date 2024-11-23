@@ -60,7 +60,7 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, size_t searchListSi
     if (chooseRandom) {
         std::random_device dev;
         std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> uniform(0,graph.size() - 1);
+        std::uniform_int_distribution<std::mt19937::result_type> uniform(0, graph.size() - 1);
         startingNode = graph[uniform(rng)];
     }
     insert(xp, startingNode, searchListSize, alpha, outDegreeBound);
@@ -73,7 +73,7 @@ FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t s
     if (chooseRandom) {
         std::random_device dev;
         std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> uniform(0,graph.size() - 1);
+        std::uniform_int_distribution<std::mt19937::result_type> uniform(0, graph.size() - 1);
         startingNode = graph[uniform(rng)];
     }
     auto [closestK, candidateList] = greedySearch(startingNode, query, k, searchListSize);
@@ -234,55 +234,58 @@ FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::sha
     }
 }
 
-void FreshVamanaIndex::deleteNodes(const std::unordered_set<int> &nodesToDelete, double alpha, size_t outDegreeBound) {
-    // 1. Marca los nodos a eliminar: "cuando un punto p es eliminado, lo añadimos a DeleteList..."
-    for (const int nodeId: nodesToDelete) {
-        deleteList.insert(nodeId);
+void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
+    // only mark as deleted
+    xp->deleted = true;
+    // add to delete list
+    deleteList.insert(xp);
+    // 1-10% of the index size
+    if (deleteAccumulationFactor) {
+        deleteConsolidation();
     }
+}
 
-    // 2. Consolidación: para cada nodo que tiene vecinos en DeleteList:
-    // "...actualizamos los vecindarios de los puntos con out-edges a estos nodos eliminados..."
-    for (auto &[id, node]: graphNodes) {
-        if (deleteList.find(id) != deleteList.end()) {
+void FreshVamanaIndex::deleteConsolidation() {
+
+    for (auto node: graph) {
+        // foreach p in P \ L_D (omit nodes in L_D)
+        if (deleteList.find(node) == deleteList.end()) {
+            continue;
+        }
+        // Nout(p) n L_D != {}
+        std::set<std::shared_ptr<GraphNode>> deletedNeighbors;
+        std::set_intersection(deleteList.begin(), deleteList.end(), node->outNeighbors.begin(),
+                              node->outNeighbors.end(), std::inserter(deletedNeighbors, deletedNeighbors.begin()));
+//        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
+//            return deleteList.find(outNeighbor) != deleteList.end();
+//        });
+        if (deletedNeighbors.empty()) {
             continue;
         }
 
-        // Encuentra vecinos afectados por nodos eliminados:
-        // "D ← 𝑁out(𝑝) ∩ 𝐿𝐷"
-        std::unordered_set<int> deletedNeighbors;
-        for (std::shared_ptr<GraphNode> outNeighbor: node->outNeighbors) {
-            if (deleteList.find(outNeighbor->id) != deleteList.end()) {
-                deletedNeighbors.insert(outNeighbor->id);
+        // "C ← 𝑁out(𝑝) \ D" Inicializamos la lista de candidatos
+        std::set<std::shared_ptr<GraphNode>> candidateList;
+        for (auto outNeighbor: node->outNeighbors) {
+            // verify neighbor not in D
+            if (deletedNeighbors.find(node) == deletedNeighbors.end()) {
+                candidateList.insert(node);
             }
         }
 
-        if (!deletedNeighbors.empty()) {
-            // "C ← 𝑁out(𝑝) \ D" Inicializamos la lista de candidatos
-            std::unordered_set<std::shared_ptr<GraphNode>> candidates(node->outNeighbors.begin(),
-                                                                      node->outNeighbors.end());
-
-            // "foreach 𝑣 ∈ D do C ← C ∪ 𝑁out(𝑣)"
-            for (int deletedNeighborId: deletedNeighbors) {
-                std::shared_ptr<GraphNode> deletedNeighbor = graphNodes[deletedNeighborId];
-                candidates.insert(deletedNeighbor->outNeighbors.begin(), deletedNeighbor->outNeighbors.end());
-            }
-
-            // "C ← C \ D"
-            for (int deletedNeighborId: deletedNeighbors) {
-                candidates.erase(graphNodes[deletedNeighborId]);
-            }
-
-            // Prune la lista de candidatos preservando la propiedad 𝛼−RNG:
-            // "𝑁out (𝑝) ← RobustPrune(𝑝, C, 𝛼, 𝑅)"
-            std::vector<std::shared_ptr<GraphNode>> candidateList(candidates.begin(), candidates.end());
-            robustPrune(node, candidateList, alpha, outDegreeBound);
-
-            // Actualiza los vecinos de salida del nodo con los resultados del prune
-            node->outNeighbors = candidateList;
+        // "foreach 𝑣 ∈ D do C ← C ∪ 𝑁out(𝑣)"
+        for (auto deletedNeighbor: deletedNeighbors) {
+            candidateList.insert(deletedNeighbor->outNeighbors.begin(), deletedNeighbor->outNeighbors.end());
         }
+
+        // "C ← C \ D"
+        std::set<std::shared_ptr<GraphNode>> finalCandidateList;
+        std::set_difference(candidateList.begin(), candidateList.end(), deletedNeighbors.begin(),
+                            deletedNeighbors.end(), std::inserter(finalCandidateList, finalCandidateList.begin()));
+        auto candidates = std::vector(finalCandidateList.begin(), finalCandidateList.end());
+        robustPrune(node, candidates, alpha, outDegreeBound);
     }
 }
 
 std::shared_ptr<GraphNode> FreshVamanaIndex::getNode(size_t id) {
-    return graph[id-1];
+    return graph[id - 1];
 }
