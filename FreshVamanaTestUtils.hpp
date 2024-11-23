@@ -2,6 +2,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <random>
+#include <unordered_map>
 #include "GraphNode.h"
 
 namespace FreshVamanaTestUtils {
@@ -93,5 +95,19 @@ namespace FreshVamanaTestUtils {
         return {duration};
     }
 
+    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> computeExcludedNodeList(std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp>, size_t k) {
+        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> excluded;
+        for (auto &[id, neighbors] : neighborMap) {
+            neighbors.resize(k);
+        }
+
+    }
+
+    std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset) {
+        std::random_device dev;
+        std::mt19937 rng(dev());
+        std::uniform_int_distribution<std::mt19937::result_type> uniform(0, dataset.size() - 1);
+        return dataset[uniform(rng)];
+    }
 
 }
