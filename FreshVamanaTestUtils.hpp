@@ -3,9 +3,10 @@
 #include <fstream>
 #include <sstream>
 #include <random>
+#include <random>
 #include <unordered_map>
 #include "GraphNode.h"
-/*
+
 namespace FreshVamanaTestUtils {
     std::vector<std::shared_ptr<GraphNode>> loadDataset(std::string path) {
         std::vector<std::shared_ptr<GraphNode>> data;
@@ -95,10 +96,10 @@ namespace FreshVamanaTestUtils {
         return {duration};
     }
 
-    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> computeExcludedNodeList(std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp>, size_t k) {
+    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> computeExcludedNodeList(std::unordered_map<size_t, std::shared_ptr<GraphNode>> &neighborMap, size_t k) {
         std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> excluded;
         for (auto &[id, neighbors] : neighborMap) {
-            neighbors.resize(k);
+//            neighbors.resize(k);
         }
 
     }
@@ -111,4 +112,3 @@ namespace FreshVamanaTestUtils {
     }
 
 }
-*/

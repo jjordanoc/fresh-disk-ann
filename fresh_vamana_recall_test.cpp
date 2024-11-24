@@ -1,14 +1,10 @@
-//
-// Created by Juan Pedro on 22/11/2024.
-//
-
 // main.cpp
 #include <iostream>
 #include <chrono>
 #include <set>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
-/*
+
 
 int main() {
     // Test parameters (annotated paper values)
@@ -91,4 +87,3 @@ int main() {
 
     return 0;
 }
-*/

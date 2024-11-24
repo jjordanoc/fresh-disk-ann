@@ -4,9 +4,6 @@
 #include <set>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
-#include "FreshDiskANN Components/PrecisionLTI.h"
-
-#include "FreshDiskANN Components/CompressedLTI.h"
 
 void testNodeCreation() {
     std::vector<double> values = {1.0, 2.0, 3.0};
@@ -22,9 +19,7 @@ void testNodeCreation() {
     for (const auto &feature: node2->features) {
         std::cout << feature << " ";
     }
-    std::cout << "\nNode 1 Out Neighbors: " << node1->outNeighbors.size() << ", Node 2 In Neighbors: "
-              //<< node2->inNeighbors.size()
-                << std::endl;
+    std::cout << "\nNode 1 Out Neighbors: " << node1->outNeighbors.size() << std::endl;
 }
 
 void testDistanceFunction() {
@@ -54,19 +49,14 @@ void testGreedySearch() {
 
     // Conectar los nodos
     node1->outNeighbors.push_back(node2);
-    //node2->inNeighbors.push_back(node1);
 
     node2->outNeighbors.push_back(node3);
-    //node3->inNeighbors.push_back(node2);
 
     node3->outNeighbors.push_back(node4);
-    //node4->inNeighbors.push_back(node3);
 
     node4->outNeighbors.push_back(node5);
-    //node5->inNeighbors.push_back(node4);
 
     node5->outNeighbors.push_back(node6);
-    //node6->inNeighbors.push_back(node5);
 
 
     // Crear el índice
@@ -185,117 +175,12 @@ int main() {
     std::cout << "\nTesting Insert and Search" << std::endl;
     testInsert();
 #else
-
-    PrecisionLTI precisionLTI("graph_nodes.dat", 10);
-
-    // Load dataset and store nodes
-    precisionLTI.loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", precisionLTI);
-
-    std::cout << "======================================================================" << std::endl;
-    std::cout << "======================================================================" << std::endl;
-    std::cout << "======================================================================" << std::endl;
-    std::cout << "======================================================================" << std::endl;
-
-    // Retrieve and print the features and connections of the first 5 nodes
-    for (size_t i = 1; i <= 5; i++) {
-        std::cout << "Retrieving node with ID: " << i << " | Features: ";
-        std::shared_ptr<GraphNode> retrievedNode = precisionLTI.retrieveNode(i);
-        for (const auto &feature : retrievedNode->features) {
-            std::cout << feature << " ";
-        }
-        std::cout << "| Connections: ";
-        for (const auto &neighbor : retrievedNode->outNeighbors) {
-            std::cout << neighbor->id << " ";
-        }
-        std::cout << std::endl;
-    }
-
-
-    /*
-    PrecisionLTI precisionLTI("graph_nodes.dat", 10);
-
-    // Load dataset and store nodes
-    precisionLTI.loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", precisionLTI);
-
-    std::cout<<"======================================================================"<<std::endl;
-    std::cout<<"======================================================================"<<std::endl;
-    std::cout<<"======================================================================"<<std::endl;
-    std::cout<<"======================================================================"<<std::endl;
-
-    // Retrieve and print the features of the first node
-    for (size_t i = 1; i <= 10000; i++) {
-        std::cout<<"Retrieving node with ID: "<<i<< "| Features: ";
-        std::shared_ptr<GraphNode> retrievedNode = precisionLTI.retrieveNode(i);
-        for (const auto &feature : retrievedNode->features) {
-            std::cout << feature << " ";
-        }
-        std::cout << std::endl;
-    }
-    */
-
-
-
-
-
-
-    /*
-    PrecisionLTI precisionLTI("graph_nodes.dat", 10);
-
-    // Create a GraphNode
-    std::vector<double> features = {1.0, 2.0, 3.0};
-    std::shared_ptr<GraphNode> node = std::make_shared<GraphNode>(1, features);
-
-    // Store the node
-    precisionLTI.storeNode(node);
-
-    // Retrieve the node
-    std::shared_ptr<GraphNode> retrievedNode = precisionLTI.retrieveNode(1);
-
-    // Print the retrieved node's features
-    for (const auto &feature : retrievedNode->features) {
-        std::cout << feature << " ";
-    }
-    std::cout << std::endl;
-    */
-
-
-
-
-
-
-
-    /*
-    // Cargar y comprimir el dataset
-    CompressedLTI compressedLTI;
-    compressedLTI.loadDatasetCompressed("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", 4); // Usando 32 bytes para la compresión
-
-    std::cout << "Loaded and compressed dataset with " << compressedLTI.compressedGraphNodes.size() << " entries" << std::endl;
-
-    // Acceder a algunos nodos comprimidos y verificar sus características
-    size_t count = 0;
-    for (const auto& [id, compressedNode] : compressedLTI.compressedGraphNodes) {
-        std::cout << "Node ID: " << compressedNode->id << ", Compressed Features: ";
-        for (const auto& feature : compressedNode->compressedFeatures) {
-            std::cout << static_cast<int>(feature) << " ";
-        }
-        std::cout << std::endl;
-        // Limitar la salida a los primeros 5 nodos para no sobrecargar la consola
-        if (++count >= 50) break;
-    }
-    */
-
-
-
-
-
-
-    /*
-    // Test parameters
-    const size_t NEIGHBOR_COUNT = 5,
-            SEARCH_LIST_SIZE = 75,
+    // Test parameters (annotated paper values)
+    const size_t NEIGHBOR_COUNT = 5, // 5
+            SEARCH_LIST_SIZE = 30, // 75
             N_TEST_POINTS = 100,
-            OUT_DEGREE_BOUND = 64;
-    const double ALPHA = 1.2;
+            OUT_DEGREE_BOUND = 64; // 64
+    const double ALPHA = 1.2; // 1.2
 
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND);
 
@@ -334,7 +219,7 @@ int main() {
             auto foundNeighborNode = timedResult.result[i];
             auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
-                      << index.distance(trueNeighborNode, queryPoint) << "(FOUND) "
+                      << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
                       << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
                       << std::endl;
             // Count for recall
@@ -353,8 +238,6 @@ int main() {
     }
     std::cout << "avg recall@" << NEIGHBOR_COUNT << ": " << (avgRecall / (double) N_TEST_POINTS)
               << std::endl;
-    */
-
 #endif
 
     return 0;
