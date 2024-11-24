@@ -8,19 +8,25 @@
 #include <fstream>
 #include <sstream>
 
-void CompressedLTI::productQuantization(std::shared_ptr<GraphNode> node, size_t maxBytes) {
-    std::shared_ptr<CompressedGraphNode> compressedNode = std::make_shared<CompressedGraphNode>(); //Se crea un nuevo objeto CompressedGraphNode y se asigna a un std::shared_ptr.
-    compressedNode->id = node->id; //Asignar el ID del nodo original al nodo comprimido
-
-    //Simular la compresión generando bytes aleatorios (//todo: ESTO SE DEBERIA CAMBIAR, YA QUE NO ESTAMOS UTILIZANDO PRODUCT QUANTIZATION)
-    // Compress by truncating the features to maxBytes
-    std::vector<uint8_t> compressedData(node->features.begin(), node->features.begin() + std::min(maxBytes, node->features.size()));
-
-    compressedNode->compressedFeatures = compressedData; //Asignar los datos comprimidos al nodo comprimido
-    compressedGraphNodes[node->id] = compressedNode; //Guardar el nodo comprimido en el mapa de nodos comprimidos
+void CompressedLTI::PQandStoreNode(std::shared_ptr<GraphNode> node, size_t maxBytes) {
+    std::shared_ptr<CompressedGraphNode> compressedNode = productQuantization(node, maxBytes);
+    compressedGraphNodes[node->id] = compressedNode;
 }
 
+std::shared_ptr<CompressedGraphNode> CompressedLTI::productQuantization(std::shared_ptr<GraphNode> node, size_t maxBytes) {
+    std::shared_ptr<CompressedGraphNode> compressedNode = std::make_shared<CompressedGraphNode>();
+    compressedNode->id = node->id;
 
+    //Compress by truncating the features to maxBytes
+    std::vector<uint8_t> compressedData(node->features.begin(), node->features.begin() + std::min(maxBytes, node->features.size()));
+
+    //Save the compressed data to the compressed node
+    compressedNode->compressedFeatures = compressedData;
+
+    return compressedNode;
+}
+
+//(TEST)
 void CompressedLTI::loadDatasetCompressed(std::string csvPath, size_t maxBytes) {
     std::ifstream file(csvPath);
     if (!file.is_open()) {

@@ -14,16 +14,21 @@ class PrecisionLTI {
 private:
     std::string filePath;
     size_t outDegreeBound;
+    std::shared_ptr<size_t> nodeCount; //To store the number of nodes
+
+
 public:
     PrecisionLTI(std::string filePath, size_t outDegreeBound)
-        : filePath(filePath), outDegreeBound(outDegreeBound) {}
+        : filePath(filePath), outDegreeBound(outDegreeBound), nodeCount(std::make_shared<size_t>(0)) {}
 
 
     void storeNode( std::shared_ptr<GraphNode> node);
     std::shared_ptr<GraphNode> retrieveNode(size_t nodeId);
 
-    void loadDatasetAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI); // Load CSV and Store (Test)
-    void loadDatasetAndcreateConectionsAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI);// Load CSV, create Neighbours and Store (Test)
+    std::shared_ptr<size_t> getNodeCount() const { return nodeCount; } // Getter for nodeCount
+
+
+    void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours);
 
 };
 #endif //PRECISIONLTI_H

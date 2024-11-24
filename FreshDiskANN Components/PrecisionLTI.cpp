@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <random>
+#include <set>
 
 #include "PrecisionLTI.h"
 
@@ -43,6 +45,9 @@ void PrecisionLTI::storeNode(std::shared_ptr<GraphNode> node) {
     outFile.write(padding.data(), paddingSize);
 
     outFile.close(); //Cierra el archivo.
+
+    (*nodeCount) += 1; // Increment the node count
+    //std::cout<<"Node Count: "<< *nodeCount<<std::endl;
 };
 
 
@@ -96,46 +101,7 @@ std::shared_ptr<GraphNode> PrecisionLTI::retrieveNode(size_t nodeId) {
     throw std::runtime_error("Node not found");
 }
 
-
-
-//Carga un conjunto de nodos desde un archivo CSV y los almacena en el PrecisionLTI.
-void PrecisionLTI::loadDatasetAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI) {
-    std::ifstream file(csvPath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Unable to open file: " + csvPath);
-    }
-
-    size_t id = 1;
-    std::string line;
-    while (std::getline(file, line)) {
-        std::vector<double> features;
-        std::string value;
-        std::istringstream stream(line);
-
-        while (std::getline(stream, value, ',')) {
-            try {
-                features.push_back(std::stod(value));
-            } catch (const std::invalid_argument &) {
-                throw std::runtime_error("Invalid number in file: " + value);
-            }
-        }
-
-        if (!features.empty()) {
-            std::shared_ptr<GraphNode> node = std::make_shared<GraphNode>(id, features);
-            precisionLTI.storeNode(node);
-            std::cout << "Storing node with ID: " << id << ", Features: ";
-            for (const auto &feature : features) {
-                std::cout << feature << " ";
-            }
-            std::cout << std::endl;
-            id++;
-        }
-    }
-}
-
-
-//Carga los 5 primeros nodos desde un archivo CSV, los une entre sí y los almacena en el PrecisionLTI.
-void PrecisionLTI::loadDatasetAndcreateConectionsAndStoreNodes(std::string csvPath, PrecisionLTI precisionLTI) {
+void PrecisionLTI::loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours) {
     std::ifstream file(csvPath);
     if (!file.is_open()) {
         throw std::runtime_error("Unable to open file: " + csvPath);
@@ -145,8 +111,7 @@ void PrecisionLTI::loadDatasetAndcreateConectionsAndStoreNodes(std::string csvPa
     std::string line;
     std::vector<std::shared_ptr<GraphNode>> nodes;
 
-    // Cargar los 5 primeros nodos
-    while (std::getline(file, line) && id <= 5) {
+    while (std::getline(file, line)) {
         std::vector<double> features;
         std::string value;
         std::istringstream stream(line);
@@ -166,22 +131,26 @@ void PrecisionLTI::loadDatasetAndcreateConectionsAndStoreNodes(std::string csvPa
         }
     }
 
-    // Unir los nodos entre sí
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        for (size_t j = 0; j < nodes.size(); ++j) {
-            if (i != j) {
-                nodes[i]->outNeighbors.push_back(nodes[j]);
+    // Assign random neighbors to each node
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(1, 10000);
+
+    for (auto &node : nodes) {
+        std::set<size_t> neighborIds;
+        while (neighborIds.size() < maxNeighbours) {
+            neighborIds.insert(dis(gen));
+        }
+
+        for (const auto &neighborId : neighborIds) {
+            if (neighborId != node->id) {
+                std::shared_ptr<GraphNode> neighbor = std::make_shared<GraphNode>(neighborId, std::vector<double>{});
+                node->outNeighbors.push_back(neighbor);
             }
         }
-    }
 
-    // Guardar los nodos y mostrar sus conexiones
-    for (const auto &node : nodes) {
-        precisionLTI.storeNode(node);
-        std::cout << "Storing node with ID: " << node->id << ", Connected to: ";
-        for (const auto &neighbor : node->outNeighbors) {
-            std::cout << neighbor->id << " ";
-        }
-        std::cout << std::endl;
+        storeNode(node);
+
+        //std::cout << "Storing node with ID: " << node->id << std::endl;
     }
 }

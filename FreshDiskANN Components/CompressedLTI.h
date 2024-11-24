@@ -20,7 +20,10 @@ public:
     std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;// Compressed points
 
     //todo Puede que tal vez sea buena opcion que productQuantization este en FreshDiskANN.h
-    void productQuantization(std::shared_ptr<GraphNode> node, size_t maxBytes); // Compress data (Product Quantization: 25-32 bytes)
+    std::shared_ptr<CompressedGraphNode> productQuantization(std::shared_ptr<GraphNode> node, size_t maxBytes); // Compress a node (Product Quantization: 25-32 bytes)
+
+    void PQandStoreNode(std::shared_ptr<GraphNode> node, size_t maxBytes); // Compress a node and store it in CompressedLTI (Product Quantization: 25-32 bytes)
+
 
     void loadDatasetCompressed( std::string csvPath, size_t maxBytes); // Load dataset (TEST)
 

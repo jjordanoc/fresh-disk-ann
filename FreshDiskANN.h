@@ -8,50 +8,64 @@
 
 #include "FreshDiskANN Components/CompressedLTI.h"
 #include "FreshDiskANN Components/PrecisionLTI.h"
-#include "FreshDiskANN Components/DeleteList.h"
 
 #include "FreshVamanaIndex.h"
 
 class FreshDiskANN {
 
-private:
+public:
     const double alpha;
     const size_t outDegreeBound;
 
     CompressedLTI compressedLTI; //RAM
-    PrecisionLTI precisionLTI; //SSD
+    std::shared_ptr<PrecisionLTI> precisionLTI; //SSD
+    std::shared_ptr<PrecisionLTI> intermediateLTI; //SSD (Temp)
 
     //Instancias del FreshVamanaIndex
     std::shared_ptr<FreshVamanaIndex> roTempIndex; //RAM
     std::shared_ptr<FreshVamanaIndex> rwTempIndex; //RAM
 
-    DeleteList deleteList; //RAM
+    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList; //RAM
 
-
-    //RO-TempIndex (RAM)
-    //RW-TempIndex (RAM)
-    //DeleteList (RAM)
-
-
-public:
+//public:
 
     static const std::string DEFAULT_FILE_PATH_PRECISION_LTI;
+    static const std::string DEFAULT_FILE_PATH_INTERMEDIATE_LTI;
+
     static const size_t DEFAULT_OUT_DEGREE_BOUND;
     static const double DEFAULT_ALPHA;
     static const double DEFAULT_DELETE_ACCUMULATION_FACTOR;
     static const size_t DEFAULT_SEARCH_LIST_SIZE;
 
+
     //Constructors
-    FreshDiskANN(const double alpha = DEFAULT_ALPHA , const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND) : alpha(alpha), outDegreeBound(outDegreeBound), precisionLTI(DEFAULT_FILE_PATH_PRECISION_LTI, outDegreeBound) {}
+    FreshDiskANN(const double alpha = DEFAULT_ALPHA , const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND) : alpha(alpha), outDegreeBound(outDegreeBound) {
+        roTempIndex = std::make_shared<FreshVamanaIndex>(alpha, outDegreeBound, DEFAULT_DELETE_ACCUMULATION_FACTOR);
+        rwTempIndex = std::make_shared<FreshVamanaIndex>(alpha, outDegreeBound, DEFAULT_DELETE_ACCUMULATION_FACTOR);
+        precisionLTI = std::make_shared<PrecisionLTI>(DEFAULT_FILE_PATH_PRECISION_LTI, outDegreeBound);
+        intermediateLTI = std::make_shared<PrecisionLTI>(DEFAULT_FILE_PATH_INTERMEDIATE_LTI, outDegreeBound);
+    }
 
     //Methods
 
-    //Insert (xp): Afecta solo al RW-TempIndex. Algoritmo 2
-    void insert(std::shared_ptr<GraphNode> p, std::shared_ptr<GraphNode> s, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, double alpha = DEFAULT_ALPHA, size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND);
+    //Insert (xp): Insertamos en RW-Index, ademas que agregamos los compressed features en Compressed LTI -  Algoritmo 2
+    void insert(std::shared_ptr<GraphNode> xp, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
 
-
-    //Insert (xp): Afecta solo al RW-TempIndex. Algoritmo 2
     //Delete (p): Los puntos que se quieren eliminar se añaden a la DeleteList. No se eliminan inmediatamente del LTI ni del TempIndex, pero no aparecerán en resultados de búsqueda.
+    void deleteNode(std::shared_ptr<GraphNode> p);
+
+
+    /*
+    Whenever Algorithm 4 (Deletion) or Algorithm 3 (Robust Prune) make any distance comparisons, we use the compressed PQ vectors which are already stored on behalf of
+    the LTI to calculate the approximate distances
+    */
+    double compressedDistance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq);
+    void robustPruneWithCompressedVectors(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound);
+    void algorithm4(std::vector<std::shared_ptr<GraphNode>> graph, std::shared_ptr<GraphNode> p);
+
+    void deletePhase(size_t maxBlockSize = 60 * 4096);
+
+    void streamingMerge();
     //GreedySearch (xq, K, L): La búsqueda se realiza consultando el LTI, el RW-TempIndex y todos los RO-TempIndex. Los resultados se agregan y se eliminan aquellos puntos que estén en la DeleteList (es decir, los puntos eliminados no se devuelven en los resultados).
 
     /*
