@@ -300,11 +300,3 @@ void FreshDiskANN::streamingMerge() {
     std::cout << "Stating with the delete phase" << std::endl;
     deletePhase();
 }
-
-/*
-// Test: Load a set of nodes from a CSV file and store them in PrecisionLTI
-    PrecisionLTI precisionLTI_test(FreshDiskANN::DEFAULT_FILE_PATH_PRECISION_LTI, 10);
-    precisionLTI = precisionLTI_test;
-    precisionLTI.loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", precisionLTI, 10);
-
- */

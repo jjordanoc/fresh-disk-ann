@@ -33,13 +33,15 @@ public:
     std::vector<std::shared_ptr<GraphNode>> knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
     std::shared_ptr<GraphNode> getNode(size_t id);
     double distance(std::shared_ptr<GraphNode>node, std::shared_ptr<GraphNode>xq);
+
+    std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
 private:
 //    std::unordered_map<int, std::shared_ptr<GraphNode>> graphNodes;
 //    std::unordered_set<int> deleteList;
     const double alpha;
     const size_t outDegreeBound;
     const double deleteAccumulationFactor;
-    std::vector<std::shared_ptr<GraphNode>> graph;
+
 //    std::unordered_map<size_t, std::shared_ptr<GraphNode>> graph;
     std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList;
 };

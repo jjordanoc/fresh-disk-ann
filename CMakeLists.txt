@@ -19,11 +19,8 @@ add_executable(freshdiskann main.cpp
         "FreshDiskANN Components/CompressedLTI.h"
         "FreshDiskANN Components/PrecisionLTI.cpp"
         "FreshDiskANN Components/PrecisionLTI.h"
-        "FreshDiskANN Components/RWTempIndex.cpp"
-        "FreshDiskANN Components/RWTempIndex.h"
-        "FreshDiskANN Components/ROTempIndex.cpp"
-        "FreshDiskANN Components/ROTempIndex.h"
         FreshVamanaTestUtils.hpp)
+
 
 add_executable(fresh_vamana_recall_test fresh_vamana_recall_test.cpp
         GraphNode.cpp
@@ -44,6 +41,4 @@ add_executable(deletePhaseTest deletePhaseTest.cpp
         "FreshDiskANN Components/CompressedLTI.cpp"
         "FreshDiskANN Components/CompressedLTI.h"
         "FreshDiskANN Components/PrecisionLTI.cpp"
-        "FreshDiskANN Components/PrecisionLTI.h"
-        FreshVamanaTestUtils.hpp
-        fresh_vamana_recall_test.cpp)
+        "FreshDiskANN Components/PrecisionLTI.h")
