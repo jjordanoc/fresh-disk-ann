@@ -11,7 +11,20 @@
 #include <sstream>
 #include <vector>
 #include <queue>
+#include <iostream>
 #include <unordered_set>
+
+double calculateReconstructionError(const std::vector<double>& original,
+                                    const std::vector<double>& reconstructed) {
+    if (original.size() != reconstructed.size()) {
+        throw std::runtime_error("Vectors must be of the same size for error calculation");
+    }
+    double error = 0.0;
+    for (size_t i = 0; i < original.size(); ++i) {
+        error += std::pow(original[i] - reconstructed[i], 2);
+    }
+    return std::sqrt(error / original.size()); // RMS error
+}
 
 std::vector<std::vector<double> > CompressedLTI::prepareTrainingData(std::shared_ptr<GraphNode> startNode){
     std::vector<std::vector<double>> trainingData;
@@ -36,7 +49,7 @@ std::vector<std::vector<double> > CompressedLTI::prepareTrainingData(std::shared
         }
     }
 
-    if (trainingData.size() < 50) { // FAISS recomienda al menos 10x m
+    if (trainingData.size() < 10) { // FAISS recomienda al menos 10x m
         throw std::runtime_error("Error: Not enough training data. At least 10 samples are needed.");
     }
 
@@ -58,19 +71,35 @@ void CompressedLTI::productQuantization(std::shared_ptr<GraphNode> node, size_t 
     if(node->features.empty()) throw std::runtime_error("Error: Empty features vector");
 
     size_t d = node->features.size(); //Dimension del vector de features
-    size_t m = maxBytes;
+    size_t m = std::min(maxBytes, d); // Asegurarse de que m <= d
     size_t nbits = 8; //Numero de bits por subvector
 
-    if (d % m != 0) {
-        throw std::invalid_argument("Error: The number of bytes (m) must divide the dimension (d) evenly.");
+    // *** PREPARAR DATOS DE ENTRENAMIENTO ***
+    std::vector<std::vector<double>> trainingData = prepareTrainingData(node);
+
+    size_t nx = trainingData.size(); // Número de puntos de entrenamiento disponibles
+    if (nx == 0)
+        throw std::runtime_error("Error: No training data available.");
+
+    // *** AJUSTAR PARÁMETROS DINÁMICAMENTE ***
+    size_t k = (1 << nbits) * m; // Número inicial de clústeres
+    if (nx < k) {
+        k = nx / 20; // Ajustar k a una décima parte del tamaño de los datos disponibles
+        if (k < 1) {
+            k = 1; // Asegurar que haya al menos un clúster
+        }
+
+        if (k < m) {
+            m = k; // Ajustar m si el número de clústeres es menor que m
+        }
+
+        nbits = static_cast<size_t>(std::floor(std::log2(static_cast<double>(k) / m))); // Recalcular nbits
+        if (nbits < 1) {
+            nbits = 1; // Asegurar que al menos un bit por subvector
+        }
     }
 
     faiss::IndexPQ index(d, m, nbits); //Se crea un objeto de la clase IndexPQ de Faiss
-
-    // *** ENTRENAMIENTO DEL ÍNDICE ***
-    // Obtener datos de entrenamiento
-    std::vector<std::vector<double>> trainingData = prepareTrainingData(node);
-
     // Convertir datos de entrenamiento a un array plano
     size_t numTrainingVectors = trainingData.size();
     std::vector<float> flatTrainingData(numTrainingVectors * d);
@@ -90,6 +119,15 @@ void CompressedLTI::productQuantization(std::shared_ptr<GraphNode> node, size_t 
     compressedNode->id = node->id;
     compressedNode->compressedFeatures = compressedData;
     compressedGraphNodes[node->id] = compressedNode;
+
+    // *** CALCULAR EL ERROR DE RECONSTRUCCIÓN ***
+    std::vector<float> decompressedData(d); // Vector para las características descomprimidas
+    index.sa_decode(1, compressedData.data(), decompressedData.data()); // Decodificar datos comprimidos
+
+    // Calcular el error de reconstrucción
+    double error = calculateReconstructionError(node->features,
+                          std::vector<double>(decompressedData.begin(), decompressedData.end()));
+    std::cout << "Reconstruction error for Node " << node->id << ": " << error << std::endl;
 }
 
 
