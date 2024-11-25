@@ -50,7 +50,6 @@ void PrecisionLTI::storeNode(std::shared_ptr<GraphNode> node) {
     //std::cout<<"Node Count: "<< *nodeCount<<std::endl;
 };
 
-
 std::shared_ptr<GraphNode> PrecisionLTI::retrieveNode(size_t nodeId) {
     std::ifstream inFile(filePath, std::ios::binary);
     if (!inFile) {
@@ -58,48 +57,44 @@ std::shared_ptr<GraphNode> PrecisionLTI::retrieveNode(size_t nodeId) {
     }
 
     while (inFile) {
-        // Read the node ID
         int id;
-        inFile.read(reinterpret_cast<char*>(&id), sizeof(id));
+        inFile.read(reinterpret_cast<char *>(&id), sizeof(id));
+        if (inFile.eof()) break;
+
+        size_t featureSize;
+        inFile.read(reinterpret_cast<char *>(&featureSize), sizeof(featureSize));
+
+        std::vector<double> features(featureSize);
+        inFile.read(reinterpret_cast<char *>(features.data()), featureSize * sizeof(double));
+
+        size_t neighborCount;
+        inFile.read(reinterpret_cast<char *>(&neighborCount), sizeof(neighborCount));
+
+        std::vector<std::shared_ptr<GraphNode>> outNeighbors;
+        for (size_t i = 0; i < neighborCount; ++i) {
+            int neighborId;
+            inFile.read(reinterpret_cast<char *>(&neighborId), sizeof(neighborId));
+            outNeighbors.push_back(std::make_shared<GraphNode>(neighborId, std::vector<double>{}));
+        }
+
+        // Skip padding
+        size_t currentSize = sizeof(id) + sizeof(featureSize) + featureSize * sizeof(double) +
+                             sizeof(neighborCount) + neighborCount * sizeof(int);
+        size_t paddingSize = 4096 - currentSize;
+        inFile.seekg(paddingSize, std::ios::cur);
+
         if (id == nodeId) {
-            // Read the size of the features vector
-            size_t featureSize;
-            inFile.read(reinterpret_cast<char*>(&featureSize), sizeof(featureSize));
-
-            // Read the features
-            std::vector<double> features(featureSize);
-            inFile.read(reinterpret_cast<char*>(features.data()), featureSize * sizeof(double));
-
-            // Read the number of out-neighbors
-            size_t neighborCount;
-            inFile.read(reinterpret_cast<char*>(&neighborCount), sizeof(neighborCount));
-
-            // Read the out-neighbors' IDs
-            std::vector<std::shared_ptr<GraphNode>> outNeighbors;
-            for (size_t i = 0; i < neighborCount; ++i) {
-                int neighborId;
-                inFile.read(reinterpret_cast<char*>(&neighborId), sizeof(neighborId));
-                outNeighbors.push_back(std::make_shared<GraphNode>(neighborId, std::vector<double>()));
-            }
-
-            // Skip the padding
-            size_t currentSize = sizeof(id) + sizeof(featureSize) + featureSize * sizeof(double) +
-                                 sizeof(neighborCount) + neighborCount * sizeof(int);
-            size_t paddingSize = 4096 - currentSize;
-            inFile.seekg(paddingSize, std::ios::cur);
-
-            // Create and return the node
+            inFile.close();
             auto node = std::make_shared<GraphNode>(id, features);
             node->outNeighbors = outNeighbors;
             return node;
-        } else {
-            // Skip the rest of the block
-            inFile.seekg(4096 - sizeof(id), std::ios::cur);
         }
     }
 
+    inFile.close();
     throw std::runtime_error("Node not found");
 }
+
 
 void PrecisionLTI::loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours) {
     std::ifstream file(csvPath);

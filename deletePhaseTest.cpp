@@ -10,59 +10,6 @@
 #include <random>
 #include <set>
 
-void readAndPrintPrecisionLTIs(const std::string& filePath) {
-    std::ifstream inFile(filePath, std::ios::binary);
-    if (!inFile) {
-        throw std::runtime_error("Failed to open file for reading");
-    }
-
-    while (inFile) {
-        // Read the node ID
-        int id;
-        inFile.read(reinterpret_cast<char*>(&id), sizeof(id));
-        if (inFile.eof()) break;
-
-        // Read the size of the features vector
-        size_t featureSize;
-        inFile.read(reinterpret_cast<char*>(&featureSize), sizeof(featureSize));
-
-        // Read the features
-        std::vector<double> features(featureSize);
-        inFile.read(reinterpret_cast<char*>(features.data()), featureSize * sizeof(double));
-
-        // Read the number of out-neighbors
-        size_t neighborCount;
-        inFile.read(reinterpret_cast<char*>(&neighborCount), sizeof(neighborCount));
-
-        // Read the out-neighbors' IDs
-        std::vector<int> outNeighbors(neighborCount);
-        for (size_t i = 0; i < neighborCount; ++i) {
-            inFile.read(reinterpret_cast<char*>(&outNeighbors[i]), sizeof(outNeighbors[i]));
-        }
-
-        // Skip the padding
-        size_t currentSize = sizeof(id) + sizeof(featureSize) + featureSize * sizeof(double) +
-                             sizeof(neighborCount) + neighborCount * sizeof(int);
-        size_t paddingSize = 4096 - currentSize;
-        inFile.seekg(paddingSize, std::ios::cur);
-
-        // Print the node details
-        std::cout << "Node ID: " << id << " | ";
-        /*
-        std::cout << "Features: ";
-        for (const auto& feature : features) {
-            std::cout << feature << " ";
-        }
-        */
-        std::cout << " | Out-Neighbors: ";
-        for (const auto& neighborId : outNeighbors) {
-            std::cout << neighborId << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    inFile.close();
-}
 
 void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours, std::shared_ptr<FreshDiskANN> diskANN, size_t nodesAmount) {
     // Verify if rwTempIndex is properly initialized
@@ -108,15 +55,73 @@ void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours, std::sh
                 neighborIds.insert(dis(gen));
             }
 
+            std::cout << "Generator: Node ID: " << node->id << " | ";
+
             for (const auto &neighborId : neighborIds) {
                 if (neighborId != node->id) {
+                    std::cout<<neighborId<<" ";
                     std::shared_ptr<GraphNode> neighbor = std::make_shared<GraphNode>(neighborId, std::vector<double>{1});
                     node->outNeighbors.push_back(neighbor);
                 }
             }
+            std::cout<<std::endl;
 
-            diskANN->insert(node);
+            //Guardamos en el PrecisionLTI
+            diskANN->precisionLTI->storeNode(node);
 
+            std::shared_ptr<GraphNode> retrievedNode = diskANN->precisionLTI->retrieveNode(node->id);
+
+            if (retrievedNode != nullptr) {
+                std::cout << "PrecisionLTI: Node ID: " << retrievedNode->id << " | ";
+                /*
+                std::cout << "Features: ";
+                for (const auto& feature : currentNode->features) {
+                    std::cout << feature << " ";
+                }
+                */
+                std::cout << "Out-Neighbors: ";
+                for (const auto& neighbor : retrievedNode->outNeighbors) {
+                    std::cout << neighbor->id << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            //Insertamos en el rwTempIndex
+            diskANN->rwTempIndex->insert(node);
+
+            retrievedNode = diskANN->rwTempIndex->getNode(node->id);
+            if (retrievedNode != nullptr) {
+                std::cout << "rwTempIndex: Node ID: " << retrievedNode->id << " | ";
+                /*
+                std::cout << "Features: ";
+                for (const auto& feature : currentNode->features) {
+                    std::cout << feature << " ";
+                }
+                */
+                std::cout << "Out-Neighbors: ";
+                for (const auto& neighbor : retrievedNode->outNeighbors) {
+                    std::cout << neighbor->id << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            //Insertamos en CompressedLTI
+            diskANN->compressedLTI.PQandStoreNode(node, 5);
+
+            //recogemos el nodo comprimido de CompressedLTI sabiendo que el grafo tiene esta forma:     std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;// Compressed points
+            std::shared_ptr<CompressedGraphNode> compressedNode = diskANN->compressedLTI.compressedGraphNodes[node->id];
+            if (compressedNode != nullptr) {
+                std::cout << "CompressedLTI: Node ID: " << compressedNode->id << " | ";
+                std::cout << "Compressed Features: ";
+                for (const auto& feature : compressedNode->compressedFeatures) {
+                    std::cout << static_cast<int>(feature) << " ";
+                }
+                std::cout << std::endl;
+            }
+
+
+            //diskANN->insert(node);
+            std::cout<<"============================================="<<std::endl;
             id++;
         }
     }
@@ -153,47 +158,7 @@ int main() {
     std::cout<<"============================================="<<std::endl;
 
     //Insertamos los nodos del Dataset
-    loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", 10, diskANN, 20);
-
-    std::cout<<"============================================="<<std::endl;
-    std::cout<< "Resultados despues de la insercion" << std::endl;
-    std::cout<<"============================================="<<std::endl;
-
-    //Leemos el precisionLTI
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"PrecisionLTI: "<<std::endl;
-    readAndPrintPrecisionLTIs("precisionLTI.dat");
-
-    //Leemos el rwTempIndex
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"rwTempIndex: "<<std::endl;
-    for (const auto& node : diskANN->rwTempIndex->graph) {
-        std::cout << "Node ID: " << node->id << " | ";
-
-        /*
-        std::cout << "Features: ";
-        for (const auto& feature : node->features) {
-            std::cout << feature << " ";
-        }
-        std::cout << std::endl;
-        */
-        std::cout << "Out-Neighbors: ";
-        for (const auto& neighbor : node->outNeighbors) {
-            std::cout << neighbor->id << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    //leemos el compressedLTI
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"compressedLTI: "<<std::endl;
-    for (const auto& [id, compressedNode] : diskANN->compressedLTI.compressedGraphNodes) {
-        std::cout << "Node ID: " << compressedNode->id << " | Compressed Features: ";
-        for (const auto& feature : compressedNode->compressedFeatures) {
-            std::cout << static_cast<int>(feature) << " ";
-        }
-        std::cout << std::endl;
-    }
+    loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", 10, diskANN, 10);
 
 
     std::cout<<"============================================="<<std::endl;
@@ -202,7 +167,7 @@ int main() {
 
     //Eliminamos un nodo
     diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(1));
-    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(20));
+    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(5));
     diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(10));
 
     //Revisames el DeleteList
@@ -217,50 +182,6 @@ int main() {
 
     // Llama a la función deletePhase
     diskANN->streamingMerge();
-
-    std::cout<<"============================================="<<std::endl;
-    std::cout<< "Resultados:" << std::endl;
-    std::cout<<"============================================="<<std::endl;
-
-
-    //Revisamos el DeleteList
-    std::cout<<"DeleteList despues del StreamingMerge: "<<std::endl;
-    for(auto node : diskANN->deleteList){
-        std::cout<<node->id<<std::endl;
-    }
-
-    //Leemos el rwTempIndex
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"rwTempIndex: "<<std::endl;
-    for (const auto& node : diskANN->rwTempIndex->graph) {
-        std::cout << "Node ID: " << node->id << " | ";
-        /*
-        std::cout << "Features: ";
-        for (const auto& feature : node->features) {
-            std::cout << feature << " ";
-        }
-        std::cout << std::endl;
-        */
-        std::cout << "Out-Neighbors: ";
-        for (const auto& neighbor : node->outNeighbors) {
-            std::cout << neighbor->id << " ";
-        }
-        std::cout << std::endl;
-    }
-
-
-    //Leemos el precisionLTI
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"PrecisionLTI: "<<std::endl;
-    readAndPrintPrecisionLTIs("precisionLTI.dat");
-
-    //Leemos el intermediateLTI
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"============================================="<<std::endl;
-    std::cout<<"IntermediateLTI: "<<std::endl;
-    readAndPrintPrecisionLTIs("intermediateLTI.dat");
 
     return 0;
 }

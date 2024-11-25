@@ -27,7 +27,7 @@ std::shared_ptr<FreshVamanaIndex> rwTempIndex = std::make_shared<FreshVamanaInde
 
 //Metodos auxiliares
 
-double distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
+double FreshDiskANN::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
     double sum = 0.0;
     for (size_t i = 0; i < node->features.size(); ++i) {
         sum += std::pow(node->features[i] - xq->features[i], 2);
@@ -35,7 +35,7 @@ double distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) 
     return std::sqrt(sum);
 }
 
-void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound) {
+void FreshDiskANN::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound) {
     //v ← (v ∪ 𝑁out(𝑝)) \ {𝑝}
     for (auto neighbor: p->outNeighbors) {
         if (std::find(v.begin(), v.end(), neighbor) == v.end()) {
@@ -77,66 +77,8 @@ void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<Graph
     }
 }
 
-double FreshDiskANN::compressedDistance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
-    auto compressedNode = compressedLTI.compressedGraphNodes[node->id];
-    auto compressedXq = compressedLTI.compressedGraphNodes[xq->id];
 
-    double sum = 0.0;
-    for (size_t i = 0; i < compressedNode->compressedFeatures.size(); ++i) {
-        sum += std::pow(compressedNode->compressedFeatures[i] - compressedXq->compressedFeatures[i], 2);
-    }
-    return std::sqrt(sum);
-}
-
-void FreshDiskANN::robustPruneWithCompressedVectors(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound) {
-    //v ← (v ∪ 𝑁out(𝑝)) \ {𝑝}
-    for (auto neighbor: p->outNeighbors) {
-        if (std::find(v.begin(), v.end(), neighbor) == v.end()) {
-            v.push_back(neighbor);
-        }
-    }
-    v.erase(std::remove(v.begin(), v.end(), p), v.end());
-
-    //𝑁out(𝑝) <- ∅
-    p->outNeighbors.clear();
-
-    //while v != ∅:
-    while (!v.empty()) {
-        //p* <- argminp'∈𝑣{d(p, 𝑝')}
-        auto minIt = std::min_element(v.begin(), v.end(),
-                                      [&](std::shared_ptr<GraphNode> a, std::shared_ptr<GraphNode> b) {
-                                          return compressedDistance(p, a) < compressedDistance(p, b);
-                                      });
-        std::shared_ptr<GraphNode> pStar = *minIt;
-
-        //𝑁out(𝑝) <- 𝑁out(𝑝) ∪ {p*}
-        p->outNeighbors.push_back(pStar);
-
-        //if |𝑁out(𝑝)| = outDegreeBound: break
-        if (p->outNeighbors.size() == outDegreeBound) {
-            break;
-        }
-
-        //for p' ∈ 𝑣:
-        for (auto it = v.begin(); it != v.end();) {
-            std::shared_ptr<GraphNode> pPrime = *it;
-            //if d(p*, p') ≤ d(p,p')/alpha then remove p' from v
-            if (compressedDistance(pStar, pPrime) <= compressedDistance(p, pPrime) / alpha) {
-                it = v.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-}
-
-
-
-
-
-
-//FreshVamana Delete Algorithm
-void FreshDiskANN::algorithm4(std::vector<std::shared_ptr<GraphNode>> graph, std::shared_ptr<GraphNode> p) {
+void FreshDiskANN::deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList) {
 
     for (auto node: graph) {
         // foreach p in P \ L_D (omit nodes in L_D)
@@ -147,6 +89,9 @@ void FreshDiskANN::algorithm4(std::vector<std::shared_ptr<GraphNode>> graph, std
         std::set<std::shared_ptr<GraphNode>> deletedNeighbors;
         std::set_intersection(deleteList.begin(), deleteList.end(), node->outNeighbors.begin(),
                               node->outNeighbors.end(), std::inserter(deletedNeighbors, deletedNeighbors.begin()));
+        //        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
+        //            return deleteList.find(outNeighbor) != deleteList.end();
+        //        });
         if (deletedNeighbors.empty()) {
             continue;
         }
@@ -175,8 +120,6 @@ void FreshDiskANN::algorithm4(std::vector<std::shared_ptr<GraphNode>> graph, std
 }
 
 
-
-
 //Metodos
 void FreshDiskANN::insert(std::shared_ptr<GraphNode> p, size_t searchListSize, bool chooseRandom){
 
@@ -187,6 +130,7 @@ void FreshDiskANN::insert(std::shared_ptr<GraphNode> p, size_t searchListSize, b
     //Insertar en el PrecisionLTI (TEST) TODO:BORRAR LUEGO DE TESTEAR
     std::cout<<"Insertando el nodo:" << p->id << " en el PrecisionLTI" << std::endl;
     precisionLTI->storeNode(p);
+
 
     std::cout<<"Insertando el nodo:" << p->id << " en el CompressedLTI" << std::endl;
     //Insertar en el CompressedLTI
@@ -234,10 +178,11 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
         size_t endNode = std::min(startNode + nodesPerBlock, totalNodes);
 
         std::cout << "Start Node: " << startNode << std::endl;
-        std::cout << "End Node: " << endNode << std::endl;
+        std::cout << "End Node: " << endNode << std::endl<<std::endl;
 
         std::vector<std::shared_ptr<GraphNode>> nodesInBlock;
 
+        //Read each GraphNode from the block from the PrecisionLTI
         for (size_t nodeId = startNode; nodeId < endNode; ++nodeId) {
             file.seekg(nodeId * 4096, std::ios::beg);
 
@@ -275,20 +220,72 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
             }
         }
 
+
         //Execute Algorithm 4 for the nodes in the block using multiple threads
-        for (auto node : nodesInBlock) {
-            //Verify if the node is in the delete list
-            if (deleteList.find(node) != deleteList.end()) {
-                algorithm4(nodesInBlock, node);
-                std::cout<<"Algorithm 4 executed for node: "<<node->id<<std::endl;
-            }
-        }
+        deleteConsolidation(nodesInBlock, deleteList);
+
+        std::shared_ptr<GraphNode> retrievedNode;
 
         //Write the modified block back to SSD on the intermediateLTI
         for (auto node : nodesInBlock) {
             intermediateLTI->storeNode(node);
-            std::cout<<"Writing node: "<<node->id<<" to intermediateLTI"<<std::endl;
+
+            retrievedNode = precisionLTI->retrieveNode(node->id);
+
+            if (retrievedNode != nullptr) {
+                std::cout << "PrecisionLTI: Node ID: " << retrievedNode->id << " | ";
+                /*
+                std::cout << "Features: ";
+                for (const auto& feature : currentNode->features) {
+                    std::cout << feature << " ";
+                }
+                */
+                std::cout << "Out-Neighbors: ";
+                for (const auto& neighbor : retrievedNode->outNeighbors) {
+                    std::cout << neighbor->id << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            retrievedNode = intermediateLTI->retrieveNode(node->id);
+
+            if (retrievedNode != nullptr) {
+                std::cout << "intermediateLTI: Node ID: " << retrievedNode->id << " | ";
+                /*
+                std::cout << "Features: ";
+                for (const auto& feature : currentNode->features) {
+                    std::cout << feature << " ";
+                }
+                */
+                std::cout << "Out-Neighbors: ";
+                for (const auto& neighbor : retrievedNode->outNeighbors) {
+                    std::cout << neighbor->id << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            retrievedNode = rwTempIndex->getNode(node->id);
+            if (retrievedNode != nullptr) {
+                std::cout << "rwTempIndex: Node ID: " << retrievedNode->id << " | ";
+                /*
+                std::cout << "Features: ";
+                for (const auto& feature : currentNode->features) {
+                    std::cout << feature << " ";
+                }
+                */
+                std::cout << "Out-Neighbors: ";
+                for (const auto& neighbor : retrievedNode->outNeighbors) {
+                    std::cout << neighbor->id << " ";
+                }
+                std::cout << std::endl;
+            }
+
+
+            std::cout<<"============================================="<<std::endl;
+
         }
+
+
 
     }
 

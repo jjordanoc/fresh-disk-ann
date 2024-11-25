@@ -59,9 +59,9 @@ public:
     Whenever Algorithm 4 (Deletion) or Algorithm 3 (Robust Prune) make any distance comparisons, we use the compressed PQ vectors which are already stored on behalf of
     the LTI to calculate the approximate distances
     */
-    double compressedDistance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq);
-    void robustPruneWithCompressedVectors(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound);
-    void algorithm4(std::vector<std::shared_ptr<GraphNode>> graph, std::shared_ptr<GraphNode> p);
+    double distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq);
+    void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha=DEFAULT_ALPHA, size_t outDegreeBound=DEFAULT_OUT_DEGREE_BOUND);
+    void deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList);
 
     void deletePhase(size_t maxBlockSize = 60 * 4096);
 
