@@ -24,6 +24,8 @@ public:
 
     void loadDatasetCompressed( std::string csvPath, size_t maxBytes); // Load dataset (TEST)
 
+    std::vector<std::vector<double> >prepareTrainingData(std::shared_ptr<GraphNode> node); // Prepare training data (TEST)
+
 
 
 
