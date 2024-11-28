@@ -2,8 +2,10 @@
 #include <iostream>
 #include <chrono>
 #include <set>
+#include <vector>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
+#include "FreshDiskANN Components/CompressedLTI.h"
 
 void testNodeCreation() {
     std::vector<double> values = {1.0, 2.0, 3.0};
@@ -154,11 +156,125 @@ void testInsert() {
                       << index.distance(closest, node) << ")" << std::endl;
         }
     }
+}
+
+void see(const std::vector< std::pair<double,std::vector<std::vector<double>>>> & data) {
+    for (const auto& subvector: data) {
+        for (const auto& vector: subvector.second) {
+            std::cout << "Node id: " << subvector.first << std::endl;
+            for (const auto& value: vector) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void ver_centroides(const std::vector<std::vector<std::vector<double>>> & centroids) {
+    for (const auto& centroid: centroids) {
+        std::cout<<"Centroid "<<std::endl;
+        for (const auto& value: centroid) {
+            for (const auto& subvalue: value) {
+                std::cout << subvalue << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void testProductQuantization() {
+ CompressedLTI compressedLTI;
+    std::string datasetPath = "siftsmall_base.csv";
+    std::string groundtruthPath = "siftsmall_groundtruth.csv";
+    std::string queryPath = "siftsmall_query.csv";
+
+    // Paso 1: Cargar el dataset original
+    auto dataset = FreshVamanaTestUtils::loadDataset(datasetPath);
+
+    // Paso 2: Preparar datos de entrenamiento
+    auto trainingData = compressedLTI.prepareTrainingData(dataset);
+
+    // Paso 3: Dividir vectores en subvectores
+    size_t m = 128; //m  es 128 las caracteristicas de cada node
+    auto splitData = compressedLTI.splitVectors(trainingData, m);
+
+    std::cout<<"Split data"<<std::endl;
+    std::cout<<"Tamaño de split data: "<<splitData.size()<<std::endl;
+
+    see(splitData);
+    // Paso 4: Entrenar los centroides por subvector
+    size_t k = 2; // Número de centroides 3
+    auto compressedIndices = compressedLTI.trainCentroidsPQ(splitData, k);
+    /*
+    // Ver los centroides entrenados
+    std::cout << "Centroides por subvector:\n";
+    ver_centroides(compressedLTI.centroidsPerSubvector);
+
+    // Ver los índices de los centroides asignados
+    std::cout << "Índices asignados por cada subvector:\n";
+    for (const auto& vectorIndices : compressedIndices) {
+        for (const auto& index : vectorIndices) {
+            std::cout << index << " ";
+        }
+        std::cout << "\n";
+    }
+    */
+
+
+    // Paso 5: Codificar el dataset
+    std::vector<std::pair<int, std::vector<size_t>>> encodedData;
+    for (const auto& [id, vector] : trainingData) {
+        auto encodedVector = compressedLTI.encodeVector(vector);
+        encodedData.emplace_back(id, encodedVector);
+    }
+    compressedLTI.storeCompressedGraphNodes(encodedData);
+
+
+    // Paso 6: Cargar ground truth y queries
+    auto nearestMap = FreshVamanaTestUtils::loadNearestGroundTruth(groundtruthPath);
+    auto queries = FreshVamanaTestUtils::loadDataset(queryPath);
+    auto queries_T = compressedLTI.prepareTrainingData(queries);
+    // Paso 7: Evaluar las queries y calcular recall
+    size_t NEIGHBOR_COUNT = 5;
+    size_t N_TEST_POINTS = 100;
+    double avgRecall = 0.0;
+    size_t testCnt = 0;
+
+    for (const auto& queryPoint : queries_T) {
+        auto encodedQuery = compressedLTI.encodeVector(queryPoint.second);
+
+        // Realizar búsqueda KNN
+        auto knnResults = compressedLTI.knnSearch(encodedQuery, compressedIndices, NEIGHBOR_COUNT);
+
+        // Calcular recall
+        auto trueNeighbors = nearestMap[queryPoint.first];
+        trueNeighbors.resize(NEIGHBOR_COUNT);
+        std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
+
+        size_t positiveCount = 0;
+        for (const auto& foundNeighbor : knnResults) {
+            if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
+                positiveCount++;
+            }
+        }
+
+        double recall = static_cast<double>(positiveCount) / NEIGHBOR_COUNT;
+        avgRecall += recall;
+
+        testCnt++;
+        if (testCnt == N_TEST_POINTS) break;
+    }
+
+    std::cout << "Average recall@" << NEIGHBOR_COUNT << ": " << (avgRecall / N_TEST_POINTS) << std::endl;
+
 
 }
 
 
 int main() {
+    /*
 #ifdef DEBUG
     std::cout << "Testing Node Creation..." << std::endl;
     testNodeCreation();
@@ -241,4 +357,6 @@ int main() {
 #endif
 
     return 0;
+    */
+    testProductQuantization();
 }
