@@ -154,26 +154,101 @@ void testInsert() {
                       << index.distance(closest, node) << ")" << std::endl;
         }
     }
+}
 
+void testDelete() {
+    // insert first
+    std::vector<double> values = {1.0, 2.0, 3.0};
+    std::shared_ptr<GraphNode> node1 = std::make_shared<GraphNode>(1, values);
+    values = {4.0, 5.0, 6.0};
+    std::shared_ptr<GraphNode> node2 = std::make_shared<GraphNode>(2, values);
+    values = {7.0, 8.0, 9.0};
+    std::shared_ptr<GraphNode> node3 = std::make_shared<GraphNode>(3, values);
+    values = {1.0, 3.0, 5.0};
+    std::shared_ptr<GraphNode> node4 = std::make_shared<GraphNode>(4, values);
+    values = {2.0, 4.0, 6.0};
+    std::shared_ptr<GraphNode> node5 = std::make_shared<GraphNode>(5, values);
+    values = {3.0, 5.0, 7.0};
+    std::shared_ptr<GraphNode> node6 = std::make_shared<GraphNode>(6, values);
+    std::vector<std::shared_ptr<GraphNode>> nodes = {node1, node2, node3, node4, node5, node6};
+    FreshVamanaIndex index;
+    for (auto node: nodes) {
+        index.insert(node, 10, false);
+    }
+//    // visualize graph
+//    index.printGraph();
+
+    std::cout << "1-NN luego de insertar" << std::endl;
+    // test 1-NN para cada nodo
+    for (auto node: index.graph) {
+        auto result = index.knnSearch(node, 2);
+        std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
+        for (auto closest: result) {
+            std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
+                      << index.distance(closest, node) << ")" << std::endl;
+        }
+    }
+
+    // now delete
+    index.deleteNode(node6);
+
+    std::cout << "Graph after deleting " << 6 << std::endl;
+    // visualize graph
+    index.printGraph();
+
+
+    std::cout << std::endl << "1-NN luego de borrar 6" << std::endl;
+    // test 1-NN para cada nodo
+    for (auto node: index.graph) {
+        auto result = index.knnSearch(node, 2);
+        std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
+        for (auto closest: result) {
+            std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
+                      << index.distance(closest, node) << ")" << std::endl;
+        }
+    }
+
+    // now delete again
+    // this should consolidate deletions of 6 and 5 and not be present in the graph anymore
+    // now delete
+    index.deleteNode(node5);
+
+    std::cout << "Graph after deleting " << 5 << std::endl;
+    // visualize graph
+    index.printGraph();
+
+    std::cout << std::endl << "1-NN luego de borrar 5 (y consolidacion de 5 y 6)" << std::endl;
+    // test 1-NN para cada nodo
+    for (auto node: index.graph) {
+        auto result = index.knnSearch(node, 2);
+        std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
+        for (auto closest: result) {
+            std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
+                      << index.distance(closest, node) << ")" << std::endl;
+        }
+    }
 }
 
 
 int main() {
 #ifdef DEBUG
-    std::cout << "Testing Node Creation..." << std::endl;
-    testNodeCreation();
+//    std::cout << "Testing Node Creation..." << std::endl;
+//    testNodeCreation();
+//
+//    std::cout << "\nTesting Distance Function..." << std::endl;
+//    testDistanceFunction();
+//
+//    std::cout << "\nTesting Greedy Search..." << std::endl;
+//    testGreedySearch();
+//
+//    std::cout << "\nTesting Robust Prune..." << std::endl;
+//    testRobustPrune();
+//
+//    std::cout << "\nTesting Insert and Search" << std::endl;
+//    testInsert();
 
-    std::cout << "\nTesting Distance Function..." << std::endl;
-    testDistanceFunction();
-
-    std::cout << "\nTesting Greedy Search..." << std::endl;
-    testGreedySearch();
-
-    std::cout << "\nTesting Robust Prune..." << std::endl;
-    testRobustPrune();
-
-    std::cout << "\nTesting Insert and Search" << std::endl;
-    testInsert();
+    std::cout << "\nTesting Delete and Search" << std::endl;
+    testDelete();
 #else
     // Test parameters (annotated paper values)
     const size_t NEIGHBOR_COUNT = 5, // 5

@@ -29,12 +29,15 @@ public:
 //    FreshVamanaIndex() : alpha(DEFAULT_ALPHA), outDegreeBound(DEFAULT_OUT_DEGREE_BOUND) {}
     void deleteConsolidation();
     void deleteNode(std::shared_ptr<GraphNode> xp);
-    void insert(std::shared_ptr<GraphNode> xp, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
-    std::vector<std::shared_ptr<GraphNode>> knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = true);
+    void insert(std::shared_ptr<GraphNode> xp, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = false);
+    std::vector<std::shared_ptr<GraphNode>> knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = false);
     std::shared_ptr<GraphNode> getNode(size_t id);
     double distance(std::shared_ptr<GraphNode>node, std::shared_ptr<GraphNode>xq);
 
     std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
+#ifdef DEBUG
+    void printGraph(); // DEBUG
+#endif
 private:
 //    std::unordered_map<int, std::shared_ptr<GraphNode>> graphNodes;
 //    std::unordered_set<int> deleteList;

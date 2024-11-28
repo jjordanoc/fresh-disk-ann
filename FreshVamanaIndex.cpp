@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <random>
+#include <iostream>
 
 
 double FreshVamanaIndex::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
@@ -68,7 +69,7 @@ void FreshVamanaIndex::insert(std::shared_ptr<GraphNode> xp, size_t searchListSi
 
 
 std::vector<std::shared_ptr<GraphNode>>
-FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize, bool chooseRandom) {
+FreshVamanaIndex:: knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize, bool chooseRandom) {
     auto startingNode = graph[0];
     if (chooseRandom) {
         std::random_device dev;
@@ -126,6 +127,7 @@ FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<Gra
                                           return distance(a, xq) < distance(b, xq);
                                       });
         std::shared_ptr<GraphNode> pStar = *minIt;
+//        std::cout << "best candidate so far: " << pStar->id << std::endl;
 
         //ι <- ι ∪ Nout{p*}
         for (auto neighbor: pStar->outNeighbors) {
@@ -154,27 +156,33 @@ FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<Gra
     }
 
     //Convertir los punteros a nodos
-    std::vector<std::shared_ptr<GraphNode>> allCandidateNodes;
-    for (auto node: candidateList) {
-        allCandidateNodes.push_back(node);
-    }
+//    std::vector<std::shared_ptr<GraphNode>> allCandidateNodes;
+//    for (auto node: candidateList) {
+//        allCandidateNodes.push_back(node);
+//    }
 
     //Ordenar los candidatos por distancia
-    std::sort(allCandidateNodes.begin(), allCandidateNodes.end(),
+    std::sort(candidateList.begin(), candidateList.end(),
               [&](std::shared_ptr<GraphNode> a, std::shared_ptr<GraphNode> b) {
                   return distance(a, xq) < distance(b, xq);
               });
 
     //[closest k nodes in 𝑉]
     std::vector<std::shared_ptr<GraphNode>> closestKNodes;
-    size_t numNodes = std::min(k, allCandidateNodes.size());
-    closestKNodes.assign(allCandidateNodes.begin(),
-                         allCandidateNodes.begin() + numNodes);
+    size_t numNodes = std::min(k, candidateList.size());
+    for (auto node : candidateList) {
+        if (!node->deleted) {
+            closestKNodes.push_back(node);
+        }
+        if (closestKNodes.size() == numNodes) {
+            break;
+        }
+    }
 
-    assert(closestKNodes.size() == std::min(k, allCandidateNodes.size()));
+    assert(closestKNodes.size() == numNodes);
 
     //return [closest k nodes in 𝑉], [all nodes in 𝑉]
-    return {closestKNodes, allCandidateNodes};
+    return {closestKNodes, candidateList};
 }
 
 /*
@@ -240,7 +248,7 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
     // add to delete list
     deleteList.insert(xp);
     // 1-10% of the index size
-    if (deleteAccumulationFactor * graph.size() >= deleteList.size()) {
+    if (deleteAccumulationFactor * graph.size() <= deleteList.size()) {
         deleteConsolidation();
     }
 }
@@ -281,11 +289,37 @@ void FreshVamanaIndex::deleteConsolidation() {
         std::set<std::shared_ptr<GraphNode>> finalCandidateList;
         std::set_difference(candidateList.begin(), candidateList.end(), deletedNeighbors.begin(),
                             deletedNeighbors.end(), std::inserter(finalCandidateList, finalCandidateList.begin()));
+
         auto candidates = std::vector(finalCandidateList.begin(), finalCandidateList.end());
         robustPrune(node, candidates, alpha, outDegreeBound);
     }
+    // update graph
+    auto removeIter = std::remove_if(graph.begin(), graph.end(), [this](std::shared_ptr<GraphNode> node){
+        return node->deleted;
+    });
+    graph.erase(removeIter, graph.end());
 }
 
 std::shared_ptr<GraphNode> FreshVamanaIndex::getNode(size_t id) {
     return graph[id - 1];
+}
+
+void FreshVamanaIndex::printGraph() {
+    std::cout << std::endl;
+    for (auto node : graph) {
+        std::cout << node->id;
+        if (node->deleted) {
+            std::cout << "(D)";
+        }
+        std::cout << "-> ";
+        for (auto outNeighbor : node->outNeighbors) {
+            std::cout << outNeighbor->id;
+            if (outNeighbor->deleted) {
+                std::cout << "(D)";
+            }
+            std::cout << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }

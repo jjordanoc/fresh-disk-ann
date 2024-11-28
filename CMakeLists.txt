@@ -7,7 +7,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions(-DDEBUG)
 endif()
 
-add_executable(freshdiskann main.cpp
+add_executable(fresh_vamana_methods_test fresh_vamana_methods_test.cpp
         GraphNode.cpp
         GraphNode.h
         FreshVamanaIndex.cpp
