@@ -5,6 +5,7 @@
 #include <cassert>
 #include <random>
 #include <iostream>
+#include <list>
 
 
 double FreshVamanaIndex::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
@@ -222,6 +223,15 @@ FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::sha
         std::shared_ptr<GraphNode> pStar = *minIt;
 
         //𝑁out(𝑝) <- 𝑁out(𝑝) ∪ {p*}
+        // do not add deleted nodes to the list
+        // TODO: verify if tihs is reasonable
+        if (pStar->deleted) {
+            v.erase(minIt);
+            continue;
+        }
+//        if (!pStar->deleted) {
+//            p->outNeighbors.push_back(pStar);
+//        }
         p->outNeighbors.push_back(pStar);
 
         //if |𝑁out(𝑝)| = outDegreeBound: break
@@ -233,7 +243,7 @@ FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::sha
         for (auto it = v.begin(); it != v.end();) {
             std::shared_ptr<GraphNode> pPrime = *it;
             //if d(p*, p') ≤ d(p,p')/alpha then remove p' from v
-            if (distance(pStar, pPrime) <= distance(p, pPrime) / alpha) {
+            if (distance(pStar, pPrime) * alpha <= distance(p, pPrime)) {
                 it = v.erase(it);
             } else {
                 ++it;
@@ -249,15 +259,19 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
     deleteList.insert(xp);
     // 1-10% of the index size
     if (deleteAccumulationFactor * graph.size() <= deleteList.size()) {
+#ifdef DEBUG
+        std::cout << "Consolidating delete." << std::endl;
+#endif
         deleteConsolidation();
     }
 }
 
 void FreshVamanaIndex::deleteConsolidation() {
 
+    std::list<std::shared_ptr<GraphNode>> nodesToPrune;
     for (auto node: graph) {
         // foreach p in P \ L_D (omit nodes in L_D)
-        if (deleteList.find(node) == deleteList.end()) {
+        if (deleteList.find(node) != deleteList.end()) {
             continue;
         }
         // Nout(p) n L_D != {}
@@ -275,8 +289,8 @@ void FreshVamanaIndex::deleteConsolidation() {
         std::set<std::shared_ptr<GraphNode>> candidateList;
         for (auto outNeighbor: node->outNeighbors) {
             // verify neighbor not in D
-            if (deletedNeighbors.find(node) == deletedNeighbors.end()) {
-                candidateList.insert(node);
+            if (deletedNeighbors.find(outNeighbor) == deletedNeighbors.end()) {
+                candidateList.insert(outNeighbor);
             }
         }
 

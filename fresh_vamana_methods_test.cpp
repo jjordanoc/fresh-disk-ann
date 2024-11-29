@@ -171,7 +171,7 @@ void testDelete() {
     values = {3.0, 5.0, 7.0};
     std::shared_ptr<GraphNode> node6 = std::make_shared<GraphNode>(6, values);
     std::vector<std::shared_ptr<GraphNode>> nodes = {node1, node2, node3, node4, node5, node6};
-    FreshVamanaIndex index;
+    FreshVamanaIndex index{1.2, 3 , 0.5};
     for (auto node: nodes) {
         index.insert(node, 10, false);
     }
@@ -188,6 +188,10 @@ void testDelete() {
                       << index.distance(closest, node) << ")" << std::endl;
         }
     }
+
+    std::cout << "Graph after inserting " << std::endl;
+    // visualize graph
+    index.printGraph();
 
     // now delete
     index.deleteNode(node6);
