@@ -315,7 +315,10 @@ void FreshVamanaIndex::deleteConsolidation() {
 }
 
 std::shared_ptr<GraphNode> FreshVamanaIndex::getNode(size_t id) {
-    return graph[id - 1];
+    auto result = std::find_if(graph.begin(), graph.end(), [&id](std::shared_ptr<GraphNode> node){
+        return node->id == id;
+    });
+    return *result;
 }
 
 void FreshVamanaIndex::printGraph() {

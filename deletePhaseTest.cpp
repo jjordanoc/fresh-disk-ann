@@ -158,7 +158,7 @@ int main() {
     std::cout<<"============================================="<<std::endl;
 
     //Insertamos los nodos del Dataset
-    loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", 10, diskANN, 10);
+    loadDatasetAndStoreNodes("/Users/joaquin/Desktop/eda/freshdiskann/cmake-build-relwithdebinfo/siftsmall_base.csv", 10, diskANN, 10);
 
 
     std::cout<<"============================================="<<std::endl;

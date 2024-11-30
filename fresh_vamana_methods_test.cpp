@@ -221,7 +221,27 @@ void testDelete() {
     // visualize graph
     index.printGraph();
 
-    std::cout << std::endl << "1-NN luego de borrar 5 (y consolidacion de 5 y 6)" << std::endl;
+    std::cout << std::endl << "1-NN luego de borrar 5" << std::endl;
+    // test 1-NN para cada nodo
+    for (auto node: index.graph) {
+        auto result = index.knnSearch(node, 2);
+        std::cout << "Nodos más cercanos al nodo " << node->id << ":" << " ";
+        for (auto closest: result) {
+            std::cout << "Nodo " << closest->id << " (distancia a nodo " << node->id << ": "
+                      << index.distance(closest, node) << ")" << std::endl;
+        }
+    }
+
+    // now delete again
+    // this should consolidate deletions of 6 and 5 and 4 and not be present in the graph anymore
+    // now delete
+    index.deleteNode(node4);
+
+    std::cout << "Graph after deleting " << 4 << std::endl;
+    // visualize graph
+    index.printGraph();
+
+    std::cout << std::endl << "1-NN luego de borrar 4 (y consolidacion de 5 y 6)" << std::endl;
     // test 1-NN para cada nodo
     for (auto node: index.graph) {
         auto result = index.knnSearch(node, 2);
