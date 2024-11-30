@@ -19,31 +19,45 @@
 
 class CompressedGraphNode {
 public:
-    int id;
+    int id;                              // ID único del nodo
     std::vector<uint8_t> compressedFeatures; // Compressed data (Product Quantization: 25-32 bytes)
 };
 
 class CompressedLTI {
 public:
-    std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;// Compressed points
+    // Mapa de nodos comprimidos
+    std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;
 
-    void loadDatasetCompressed( std::string csvPath); // Load dataset (TEST)
+    // Cargar índice desde SSD
+    void loadFromSSD(const std::string& filePath);
 
-    // Método para preparar datos de entrenamiento
-    std::vector< std::pair<double,std::vector<double>>> prepareTrainingData(const std::vector<std::shared_ptr<GraphNode>>& dataset);
+    // Guardar índice en SSD
+    void saveToSSD(const std::string& filePath);
 
-    // Metodo para dividir un vector en m vectores
-    std::vector< std::pair<double,std::vector<std::vector<double>>>> splitVectors(const std::vector< std::pair<double,std::vector<double>>>& data, size_t m);
+    // Construcción del índice comprimido
+    void buildCompressedIndex(const std::vector<std::shared_ptr<GraphNode>>& dataset);
 
-    // Centroides entrenados para cada subvector
-    std::vector<std::vector<std::vector<double>>> centroidsPerSubvector;
+    std::vector<uint8_t> compressFeatures(const std::vector<double>& features);
 
-    std::vector<std::vector<size_t>> trainCentroidsPQ(
-        const std::vector<std::pair<double, std::vector<std::vector<double>>>>& splitData,
-        size_t k);
+    // Calcular la distancia entre dos nodos
+    float distance(const std::vector<float>& query, int nodeId);
 
-    std::vector<size_t> encodeVector(const std::vector<double>& vector); // Método para codificar un vector
-    void storeCompressedGraphNodes(const std::vector<std::pair<int, std::vector<size_t>>>& encodedData); // Almacenar nodos comprimidos
-    std::vector<int> knnSearch(const std::vector<unsigned long>& query, const std::vector<std::vector<unsigned long>>& encodedDataset, int kNearestNeighbors);
+    // Búsqueda k-NN en el índice comprimido
+    std::vector<int> knnSearch(const std::vector<float>& query, int k);
+
+    // Agregar nodos (almacenados temporalmente en TempIndex, no aplicados en tiempo real)
+    void addNode(int id, const std::vector<double>& data);
+
+    // Marcar nodos para eliminación
+    void markForDeletion(int id);
+
+    // Destructor
+    ~CompressedLTI() {
+        delete pqIndex;
+    }
+private:
+    faiss::IndexPQ* pqIndex;
+    std::vector<int> deleteList; // Lista de nodos marcados para eliminación
+    std::shared_ptr<CompressedGraphNode> compressGraphNode(const GraphNode& node, CompressedGraphNode& compressedNode); // Comprimir nodo
 };
 #endif //COMPRESSEDLTI_H
