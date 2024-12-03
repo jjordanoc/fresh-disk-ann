@@ -22,6 +22,7 @@ int main() {
 
     auto time = FreshVamanaTestUtils::time_function([&]() {
         for (auto dataPoint: dataset) {
+            std::cout << "Inserting point " << dataPoint->id << std::endl;
             index.insert(dataPoint, SEARCH_LIST_SIZE, false);
         }
     });
@@ -31,16 +32,16 @@ int main() {
     auto nearestMap = FreshVamanaTestUtils::loadNearestGroundTruth("siftsmall_groundtruth.csv");
 
     // Test cycles of insertion / deletion
-    size_t cycle = 0;
-    while (cycle < 20) {
-        size_t reinsertedPoints = 0;
-        // Insert and delete random points
-        auto randomPoint = FreshVamanaTestUtils::pickRandomPoint(dataset);
-
-        if (reinsertedPoints >= 0.05 * dataset.size()) {
-            cycle++;
-        }
-    }
+//    size_t cycle = 0;
+//    while (cycle < 20) {
+//        size_t reinsertedPoints = 0;
+//        // Insert and delete random points
+//        auto randomPoint = FreshVamanaTestUtils::pickRandomPoint(dataset);
+//
+//        if (reinsertedPoints >= 0.05 * dataset.size()) {
+//            cycle++;
+//        }
+//    }
     auto queries = FreshVamanaTestUtils::loadDataset("siftsmall_query.csv");
 
     size_t testCnt = 0;
@@ -57,20 +58,23 @@ int main() {
         size_t positiveCount = 0;
 #ifdef DEBUG
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
+#endif
         for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
             size_t foundNeighbor = timedResult.result[i]->id - 1;
             auto foundNeighborNode = timedResult.result[i];
             auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
+#ifdef DEBUG
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
                       << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
                       << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
                       << std::endl;
+#endif
             // Count for recall
             if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
                 positiveCount++;
             }
         }
-#endif
+
         double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
         avgRecall += recall;
 #ifdef DEBUG

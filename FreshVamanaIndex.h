@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <set>
+#include <map>
 #pragma once
 #include "GraphNode.h"
 #include <vector>
@@ -22,7 +23,7 @@ public:
     // TODO: make private
     void insert(std::shared_ptr<GraphNode> xp, std::shared_ptr<GraphNode> s, size_t searchListSize, double alpha, size_t outDegreeBound);
     std::pair<std::vector<std::shared_ptr<GraphNode>>, std::vector<std::shared_ptr<GraphNode>>> greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<GraphNode> xq, size_t k, size_t searchListSize);
-    void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound);
+    void robustPrune(std::shared_ptr<GraphNode> p, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> &v, double alpha, size_t outDegreeBound);
 
     // methods
     FreshVamanaIndex(const double alpha = DEFAULT_ALPHA, const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND, const double deleteAccumulationFactor = DEFAULT_DELETE_ACCUMULATION_FACTOR) : alpha(alpha), outDegreeBound(outDegreeBound), deleteAccumulationFactor(deleteAccumulationFactor) {}
@@ -34,7 +35,7 @@ public:
     std::shared_ptr<GraphNode> getNode(size_t id);
     double distance(std::shared_ptr<GraphNode>node, std::shared_ptr<GraphNode>xq);
 
-    std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
+    std::map<size_t, std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
 #ifdef DEBUG
     void printGraph(); // DEBUG
 #endif
