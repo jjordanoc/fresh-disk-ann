@@ -36,7 +36,7 @@ int main() {
         size_t reinsertedPoints = 0;
         // Insert and delete random points
         auto randomPoint = FreshVamanaTestUtils::pickRandomPoint(dataset);
-
+        index.deleteNode(randomPoint);
         if (reinsertedPoints >= 0.05 * dataset.size()) {
             cycle++;
         }
@@ -55,7 +55,6 @@ int main() {
         trueNeighbors.resize(NEIGHBOR_COUNT);
         std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
         size_t positiveCount = 0;
-#ifdef DEBUG
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
         for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
             size_t foundNeighbor = timedResult.result[i]->id - 1;
@@ -70,13 +69,10 @@ int main() {
                 positiveCount++;
             }
         }
-#endif
         double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
         avgRecall += recall;
-#ifdef DEBUG
         std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
                   << std::endl;
-#endif
         testCnt++;
         if (testCnt == N_TEST_POINTS) {
             break;

@@ -35,9 +35,9 @@ public:
     double distance(std::shared_ptr<GraphNode>node, std::shared_ptr<GraphNode>xq);
 
     std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
-#ifdef DEBUG
+
     void printGraph(); // DEBUG
-#endif
+
 private:
 //    std::unordered_map<int, std::shared_ptr<GraphNode>> graphNodes;
 //    std::unordered_set<int> deleteList;

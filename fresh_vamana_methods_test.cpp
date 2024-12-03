@@ -289,6 +289,7 @@ int main() {
 
     auto time = FreshVamanaTestUtils::time_function([&]() {
         for (auto dataPoint: dataset) {
+            std::cout << dataPoint->id << std::endl;
             index.insert(dataPoint, SEARCH_LIST_SIZE, false);
         }
     });
