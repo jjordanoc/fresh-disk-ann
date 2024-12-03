@@ -76,7 +76,7 @@ FreshVamanaIndex::knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t s
 //        startingNode = graph[uniform(rng)];
 //    }
     auto [closestK, candidateList] = greedySearch(startingNode, query, k, searchListSize);
-    return std::vector<std::shared_ptr<GraphNode>>();
+    return closestK;
 }
 
 /*

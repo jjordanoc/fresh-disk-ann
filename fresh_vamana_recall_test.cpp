@@ -17,7 +17,7 @@ int main() {
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND);
 
     auto dataset = FreshVamanaTestUtils::loadDataset("siftsmall_base.csv");
-    dataset.resize(1000);
+//    dataset.resize(1000);
 
     std::cout << "Loaded dataset with " << dataset.size() << " entries" << std::endl;
 
