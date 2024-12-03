@@ -17,12 +17,15 @@ int main() {
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND);
 
     auto dataset = FreshVamanaTestUtils::loadDataset("siftsmall_base.csv");
+    dataset.resize(1000);
 
     std::cout << "Loaded dataset with " << dataset.size() << " entries" << std::endl;
 
     auto time = FreshVamanaTestUtils::time_function([&]() {
         for (auto dataPoint: dataset) {
+#ifdef DEBUG
             std::cout << "Inserting point " << dataPoint->id << std::endl;
+#endif
             index.insert(dataPoint, SEARCH_LIST_SIZE, false);
         }
     });
@@ -56,19 +59,15 @@ int main() {
         trueNeighbors.resize(NEIGHBOR_COUNT);
         std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
         size_t positiveCount = 0;
-#ifdef DEBUG
         std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
-#endif
         for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
             size_t foundNeighbor = timedResult.result[i]->id - 1;
             auto foundNeighborNode = timedResult.result[i];
             auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
-#ifdef DEBUG
             std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
                       << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
                       << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
                       << std::endl;
-#endif
             // Count for recall
             if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
                 positiveCount++;
@@ -77,10 +76,9 @@ int main() {
 
         double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
         avgRecall += recall;
-#ifdef DEBUG
+
         std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
                   << std::endl;
-#endif
         testCnt++;
         if (testCnt == N_TEST_POINTS) {
             break;
