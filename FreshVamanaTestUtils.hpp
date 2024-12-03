@@ -51,7 +51,8 @@ namespace FreshVamanaTestUtils {
 
             while (std::getline(stream, value, ',')) { // Use ',' as the delimiter
                 try {
-                    row.push_back(std::stoi(value)); // Convert string to double
+                    // + 1 for id
+                    row.push_back(std::stoi(value) + 1); // Convert string to double
                 } catch (const std::invalid_argument &) {
                     throw std::runtime_error("Invalid number in file: " + value);
                 }
@@ -104,13 +105,13 @@ namespace FreshVamanaTestUtils {
 
     }
 
-    std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset, const std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> &deleted) {
+    std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset, const std::map<size_t, std::shared_ptr<GraphNode>> &deleted) {
 
         std::random_device dev;
         std::mt19937 rng(dev());
         std::uniform_int_distribution<std::mt19937::result_type> uniform(0, dataset.size() - 1);
         auto result = dataset[uniform(rng)];
-        while (deleted.find(result) != deleted.end()) {
+        while (deleted.find(result->id) != deleted.end()) {
             result = dataset[uniform(rng)];
         }
         return result;

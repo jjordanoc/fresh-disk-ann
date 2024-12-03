@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <set>
+#include <map>
 #include "FreshVamanaTestUtils.hpp"
 #include "FreshVamanaIndex.h"
 
@@ -34,7 +35,7 @@ int main() {
     // Test cycles of insertion / deletion
     size_t cycle = 0;
     while (cycle < 20) {
-        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> removed;
+        std::map<size_t, std::shared_ptr<GraphNode>> removed;
         // Insert and delete random points
         auto randomPoint = FreshVamanaTestUtils::pickRandomPoint(dataset, removed);
         index.deleteNode(randomPoint);
@@ -48,18 +49,27 @@ int main() {
 //            std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
             // Verify search correctness
             auto trueNeighbors = nearestMap[queryPoint->id];
-            trueNeighbors.resize(NEIGHBOR_COUNT);
-            std::set<size_t> trueNeighborSet(trueNeighbors.begin(), trueNeighbors.end());
+//            trueNeighbors.resize(NEIGHBOR_COUNT);
+            std::set<size_t> trueNeighborSet;
+            for (const auto &actualNeighbor : trueNeighbors) {
+                if (removed.find(actualNeighbor) == removed.end()) {
+                    trueNeighborSet.insert(actualNeighbor);
+                    if (trueNeighborSet.size() == NEIGHBOR_COUNT) {
+                        break;
+                    }
+                }
+            }
+            std::vector<size_t> trueNeighborVec{trueNeighborSet.begin(), trueNeighborSet.end()};
             size_t positiveCount = 0;
 //            std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
             for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
-                size_t foundNeighbor = timedResult.result[i]->id - 1;
+                size_t foundNeighbor = timedResult.result[i]->id;
                 auto foundNeighborNode = timedResult.result[i];
-                auto trueNeighborNode = index.getNode(trueNeighbors[i] + 1);
-//                std::cout << i + 1 << ": " << "(TRUE) " << trueNeighbors[i] << " with distance "
-//                          << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
-//                          << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
-//                          << std::endl;
+                auto trueNeighborNode = index.getNode(trueNeighborVec[i]);
+                std::cout << i + 1 << ": " << "(TRUE) " << trueNeighborVec[i] << " with distance "
+                          << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
+                          << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
+                          << std::endl;
                 // Count for recall
                 if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
                     positiveCount++;
@@ -67,8 +77,8 @@ int main() {
             }
             double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
             avgRecall += recall;
-//            std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
-//                      << std::endl;
+            std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
+                      << std::endl;
             testCnt++;
             if (testCnt == N_TEST_POINTS) {
                 break;
@@ -80,7 +90,7 @@ int main() {
         if (removed.size() >= 0.05 * dataset.size()) {
             std::cout << "Finished cycle " << cycle << " reinserting..." << std::endl;
             while (!removed.empty()) {
-                index.insert(*(removed.begin()));
+                index.insert(removed.begin()->second);
                 removed.erase(removed.begin());
             }
             cycle++;
