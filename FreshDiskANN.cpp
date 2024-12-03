@@ -79,19 +79,18 @@ void FreshDiskANN::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::sh
 
 
 void FreshDiskANN::deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList) {
-
     for (auto node: graph) {
         // foreach p in P \ L_D (omit nodes in L_D)
-        if (deleteList.find(node) == deleteList.end()) {
+        if (deleteList.find(node) != deleteList.end()) {
             continue;
         }
         // Nout(p) n L_D != {}
         std::set<std::shared_ptr<GraphNode>> deletedNeighbors;
         std::set_intersection(deleteList.begin(), deleteList.end(), node->outNeighbors.begin(),
                               node->outNeighbors.end(), std::inserter(deletedNeighbors, deletedNeighbors.begin()));
-        //        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
-        //            return deleteList.find(outNeighbor) != deleteList.end();
-        //        });
+//        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
+//            return deleteList.find(outNeighbor) != deleteList.end();
+//        });
         if (deletedNeighbors.empty()) {
             continue;
         }
@@ -100,8 +99,8 @@ void FreshDiskANN::deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> g
         std::set<std::shared_ptr<GraphNode>> candidateList;
         for (auto outNeighbor: node->outNeighbors) {
             // verify neighbor not in D
-            if (deletedNeighbors.find(node) == deletedNeighbors.end()) {
-                candidateList.insert(node);
+            if (deletedNeighbors.find(outNeighbor) == deletedNeighbors.end()) {
+                candidateList.insert(outNeighbor);
             }
         }
 
@@ -114,9 +113,15 @@ void FreshDiskANN::deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> g
         std::set<std::shared_ptr<GraphNode>> finalCandidateList;
         std::set_difference(candidateList.begin(), candidateList.end(), deletedNeighbors.begin(),
                             deletedNeighbors.end(), std::inserter(finalCandidateList, finalCandidateList.begin()));
+
         auto candidates = std::vector(finalCandidateList.begin(), finalCandidateList.end());
         robustPrune(node, candidates, alpha, outDegreeBound);
     }
+    // update graph
+    auto removeIter = std::remove_if(graph.begin(), graph.end(), [this](std::shared_ptr<GraphNode> node){
+        return node->deleted;
+    });
+    graph.erase(removeIter, graph.end());
 }
 
 

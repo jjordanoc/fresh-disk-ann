@@ -104,11 +104,16 @@ namespace FreshVamanaTestUtils {
 
     }
 
-    std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset) {
+    std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset, const std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> &deleted) {
+
         std::random_device dev;
         std::mt19937 rng(dev());
         std::uniform_int_distribution<std::mt19937::result_type> uniform(0, dataset.size() - 1);
-        return dataset[uniform(rng)];
+        auto result = dataset[uniform(rng)];
+        while (deleted.find(result) != deleted.end()) {
+            result = dataset[uniform(rng)];
+        }
+        return result;
     }
 
 }

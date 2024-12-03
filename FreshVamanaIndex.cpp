@@ -267,8 +267,6 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
 }
 
 void FreshVamanaIndex::deleteConsolidation() {
-
-    std::list<std::shared_ptr<GraphNode>> nodesToPrune;
     for (auto node: graph) {
         // foreach p in P \ L_D (omit nodes in L_D)
         if (deleteList.find(node) != deleteList.end()) {
