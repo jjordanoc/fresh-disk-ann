@@ -8,8 +8,6 @@
 #include "FreshVamanaIndex.h"
 
 
-
-
 int main() {
     // Test parameters (annotated paper values)
     const size_t NEIGHBOR_COUNT = 5, // 5
@@ -43,7 +41,8 @@ int main() {
 
     // results file
     std::stringstream stream;
-    stream << std::fixed << std::setprecision(2) << "results-" << OUT_DEGREE_BOUND << "-" << PERCENTAGE_REMOVED << "-" << ALPHA << ".csv";
+    stream << std::fixed << std::setprecision(2) << "results-" << OUT_DEGREE_BOUND << "-" << PERCENTAGE_REMOVED << "-"
+           << ALPHA << ".csv";
     std::string s = stream.str();
     std::string filename = stream.str();
     std::ofstream outfile(filename);
@@ -65,20 +64,6 @@ int main() {
         auto randomPoint = FreshVamanaTestUtils::pickRandomPoint(dataset, removed);
         index.deleteNode(randomPoint);
         removed.insert({randomPoint->id, randomPoint});
-
-        // assert removal
-//        for (const auto &node : index.graph) {
-//            if (node->deleted) {
-//                if (index.deleteList.find(node) != index.deleteList.end()) {
-//                    continue;
-//                }
-//                if (removed.find(node->id) == removed.end()) {
-//                    // node should be in the graph
-//                    std::cout << node->id << std::endl;
-//                    std::cout << index.graph.size() << std::endl;
-//                }
-//            }
-//        }
         if (removed.size() % (int) (removeThreshold / 5) == 0) {
             // compute recall
             double avgRecall = 0;
@@ -89,7 +74,7 @@ int main() {
 //            std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
                 // Verify search correctness
                 auto trueNeighbors = nearestMap[queryPoint->id];
-                std::set<size_t> trueNeighborSet;
+                std::set < size_t > trueNeighborSet;
                 for (const auto &actualNeighbor: trueNeighbors) {
                     if (removed.find(actualNeighbor) == removed.end()) {
                         trueNeighborSet.insert(actualNeighbor);
@@ -100,7 +85,6 @@ int main() {
                 }
                 std::vector<size_t> trueNeighborVec{trueNeighborSet.begin(), trueNeighborSet.end()};
                 size_t positiveCount = 0;
-//            std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
                 for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
                     size_t foundNeighbor = timedResult.result[i]->id;
                     auto foundNeighborNode = timedResult.result[i];
@@ -143,7 +127,7 @@ int main() {
         if (removed.size() >= removeThreshold) {
             std::cout << "Finished cycle " << cycle << " . Reinserting..." << std::endl;
             while (!removed.empty()) {
-                auto removedNode  = removed.begin()->second;
+                auto removedNode = removed.begin()->second;
                 // make sure node is not marked as deleted
                 removedNode->deleted = false;
                 if (index.deleteList.find(removedNode) == index.deleteList.end()) {
