@@ -37,6 +37,7 @@ public:
     std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
 
     void printGraph(); // DEBUG
+    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList;
 
 private:
 //    std::unordered_map<int, std::shared_ptr<GraphNode>> graphNodes;
@@ -46,7 +47,6 @@ private:
     const double deleteAccumulationFactor;
 
 //    std::unordered_map<size_t, std::shared_ptr<GraphNode>> graph;
-    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList;
 };
 
 

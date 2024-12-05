@@ -259,10 +259,11 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
     deleteList.insert(xp);
     // 1-10% of the index size
     if (deleteAccumulationFactor * graph.size() <= deleteList.size()) {
-#ifdef DEBUG
         std::cout << "Consolidating delete." << std::endl;
-#endif
+        std::cout << graph.size() << std::endl;
+        std::cout << deleteList.size() << std::endl;
         deleteConsolidation();
+        deleteList.clear();
     }
 }
 
@@ -306,7 +307,7 @@ void FreshVamanaIndex::deleteConsolidation() {
         robustPrune(node, candidates, alpha, outDegreeBound);
     }
     // update graph
-    auto removeIter = std::remove_if(graph.begin(), graph.end(), [this](std::shared_ptr<GraphNode> node){
+    auto removeIter = std::remove_if(graph.begin(), graph.end(), [](std::shared_ptr<GraphNode> node){
         return node->deleted;
     });
     graph.erase(removeIter, graph.end());

@@ -6,3 +6,5 @@ siftsmall
 
 .vscode
 build/
+
+venv/
