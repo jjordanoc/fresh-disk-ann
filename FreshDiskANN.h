@@ -25,6 +25,7 @@ public:
     std::shared_ptr<FreshVamanaIndex> roTempIndex; //RAM
     std::shared_ptr<FreshVamanaIndex> rwTempIndex; //RAM
 
+    //std::set<size_t> deleteList; //RAM ID's only delete List
     std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList; //RAM
 
 //public:
@@ -53,19 +54,21 @@ public:
 
     //Delete (p): Los puntos que se quieren eliminar se añaden a la DeleteList. No se eliminan inmediatamente del LTI ni del TempIndex, pero no aparecerán en resultados de búsqueda.
     void deleteNode(std::shared_ptr<GraphNode> p);
+    // void deleteNode(size_t id);
 
 
-    /*
-    Whenever Algorithm 4 (Deletion) or Algorithm 3 (Robust Prune) make any distance comparisons, we use the compressed PQ vectors which are already stored on behalf of
-    the LTI to calculate the approximate distances
-    */
-    double distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq);
-    void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha=DEFAULT_ALPHA, size_t outDegreeBound=DEFAULT_OUT_DEGREE_BOUND);
-    void deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList);
+    // Whenever Algorithm 4 (Deletion) or Algorithm 3 (Robust Prune) make any distance comparisons, we use the compressed PQ vectors which are already stored on behalf of
+    // the LTI to calculate the approximate distances
+
+    // double distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq);
+    // void robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha=DEFAULT_ALPHA, size_t outDegreeBound=DEFAULT_OUT_DEGREE_BOUND);
+    // void deleteConsolidation(std::vector<std::shared_ptr<GraphNode>>& graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp>& deleteList);
 
     void deletePhase(size_t maxBlockSize = 60 * 4096);
 
     void streamingMerge();
+
+    void printGraph(std::vector<std::shared_ptr<GraphNode>>& graph);
     //GreedySearch (xq, K, L): La búsqueda se realiza consultando el LTI, el RW-TempIndex y todos los RO-TempIndex. Los resultados se agregan y se eliminan aquellos puntos que estén en la DeleteList (es decir, los puntos eliminados no se devuelven en los resultados).
 
     /*
