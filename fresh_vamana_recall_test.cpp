@@ -16,9 +16,9 @@ int main() {
     SEARCH_LIST_SIZE = 30, // 75
     N_TEST_POINTS = 50,
             OUT_DEGREE_BOUND = 37; // 64
-    const double ALPHA = 1.2, // 1.2
+    const double ALPHA = 1.1, // 1.2
     DELETE_ACCUMULATION_FACTOR = 0.04, // 0.1
-    PERCENTAGE_REMOVED = 0.1; // 0.05
+    PERCENTAGE_REMOVED = 0.05; // 0.05
 
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND, DELETE_ACCUMULATION_FACTOR);
 
@@ -43,7 +43,7 @@ int main() {
 
     // results file
     std::stringstream stream;
-    stream << std::fixed << std::setprecision(1) << "results-" << OUT_DEGREE_BOUND << "-" << PERCENTAGE_REMOVED << "-" << ALPHA << ".csv";
+    stream << std::fixed << std::setprecision(2) << "results-" << OUT_DEGREE_BOUND << "-" << PERCENTAGE_REMOVED << "-" << ALPHA << ".csv";
     std::string s = stream.str();
     std::string filename = stream.str();
     std::ofstream outfile(filename);
