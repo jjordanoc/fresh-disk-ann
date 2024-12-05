@@ -97,16 +97,7 @@ namespace FreshVamanaTestUtils {
         return {duration};
     }
 
-    std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> computeExcludedNodeList(std::unordered_map<size_t, std::shared_ptr<GraphNode>> &neighborMap, size_t k) {
-        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> excluded;
-        for (auto &[id, neighbors] : neighborMap) {
-//            neighbors.resize(k);
-        }
-
-    }
-
     std::shared_ptr<GraphNode> pickRandomPoint(const std::vector<std::shared_ptr<GraphNode>> &dataset, const std::map<size_t, std::shared_ptr<GraphNode>> &deleted) {
-
         std::random_device dev;
         std::mt19937 rng(dev());
         std::uniform_int_distribution<std::mt19937::result_type> uniform(0, dataset.size() - 1);

@@ -8,14 +8,17 @@
 #include "FreshVamanaIndex.h"
 
 
+
+
 int main() {
     // Test parameters (annotated paper values)
     const size_t NEIGHBOR_COUNT = 5, // 5
     SEARCH_LIST_SIZE = 30, // 75
     N_TEST_POINTS = 50,
-            OUT_DEGREE_BOUND = 64; // 64
+            OUT_DEGREE_BOUND = 37; // 64
     const double ALPHA = 1.2, // 1.2
-    DELETE_ACCUMULATION_FACTOR = 0.04; // 0.1
+    DELETE_ACCUMULATION_FACTOR = 0.04, // 0.1
+    PERCENTAGE_REMOVED = 0.5; // 0.05
 
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND, DELETE_ACCUMULATION_FACTOR);
 
@@ -39,7 +42,11 @@ int main() {
     queries.resize(N_TEST_POINTS);
 
     // results file
-    std::ofstream outfile("results.csv");
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(1) << "results-" << OUT_DEGREE_BOUND << "-" << PERCENTAGE_REMOVED << "-" << ALPHA << ".csv";
+    std::string s = stream.str();
+    std::string filename = stream.str();
+    std::ofstream outfile(filename);
     if (!outfile.is_open()) {
         std::cerr << "Error: Could not open file " << "results.csv" << std::endl;
         return -1;
@@ -48,7 +55,7 @@ int main() {
     std::cout << std::setprecision(5);
     outfile << std::setprecision(5);
 
-    double removeThreshold = 0.05 * dataset.size();
+    double removeThreshold = PERCENTAGE_REMOVED * (double) dataset.size();
 
     // Test cycles of insertion / deletion
     size_t cycle = 0;
@@ -72,64 +79,66 @@ int main() {
 //                }
 //            }
 //        }
-
-        double avgRecall = 0;
-        for (auto queryPoint: queries) {
-            auto timedResult = FreshVamanaTestUtils::time_function<std::vector<std::shared_ptr<GraphNode>>>([&]() {
-                return index.knnSearch(queryPoint, NEIGHBOR_COUNT, SEARCH_LIST_SIZE);
-            });
+        if (removed.size() % (int) (removeThreshold / 5) == 0) {
+            // compute recall
+            double avgRecall = 0;
+            for (auto queryPoint: queries) {
+                auto timedResult = FreshVamanaTestUtils::time_function<std::vector<std::shared_ptr<GraphNode>>>([&]() {
+                    return index.knnSearch(queryPoint, NEIGHBOR_COUNT, SEARCH_LIST_SIZE);
+                });
 //            std::cout << "Search took " << timedResult.duration << " ms" << std::endl;
-            // Verify search correctness
-            auto trueNeighbors = nearestMap[queryPoint->id];
-            std::set<size_t> trueNeighborSet;
-            for (const auto &actualNeighbor: trueNeighbors) {
-                if (removed.find(actualNeighbor) == removed.end()) {
-                    trueNeighborSet.insert(actualNeighbor);
-                    if (trueNeighborSet.size() == NEIGHBOR_COUNT) {
-                        break;
+                // Verify search correctness
+                auto trueNeighbors = nearestMap[queryPoint->id];
+                std::set<size_t> trueNeighborSet;
+                for (const auto &actualNeighbor: trueNeighbors) {
+                    if (removed.find(actualNeighbor) == removed.end()) {
+                        trueNeighborSet.insert(actualNeighbor);
+                        if (trueNeighborSet.size() == NEIGHBOR_COUNT) {
+                            break;
+                        }
                     }
                 }
-            }
-            std::vector<size_t> trueNeighborVec{trueNeighborSet.begin(), trueNeighborSet.end()};
-            size_t positiveCount = 0;
+                std::vector<size_t> trueNeighborVec{trueNeighborSet.begin(), trueNeighborSet.end()};
+                size_t positiveCount = 0;
 //            std::cout << "Neighbors for " << queryPoint->id << ": " << std::endl;
-            for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
-                size_t foundNeighbor = timedResult.result[i]->id;
-                auto foundNeighborNode = timedResult.result[i];
+                for (size_t i = 0; i < NEIGHBOR_COUNT; ++i) {
+                    size_t foundNeighbor = timedResult.result[i]->id;
+                    auto foundNeighborNode = timedResult.result[i];
 
-                auto trueNeighborNode = index.getNode(trueNeighborVec[i]);
-                // assert
-                assert(trueNeighborNode != nullptr);
-                if (trueNeighborNode == nullptr) {
-                    std::cout << trueNeighborVec[i] << std::endl;
-                    std::cout << (removed.find(trueNeighborVec[i]) == removed.end()) << std::endl;
-                    std::cout << index.graph.size() << std::endl;
-                    std::cout << index.deleteList.size() << std::endl;
-                }
+                    auto trueNeighborNode = index.getNode(trueNeighborVec[i]);
+                    // assert
+                    assert(trueNeighborNode != nullptr);
+                    if (trueNeighborNode == nullptr) {
+                        std::cout << trueNeighborVec[i] << std::endl;
+                        std::cout << (removed.find(trueNeighborVec[i]) == removed.end()) << std::endl;
+                        std::cout << index.graph.size() << std::endl;
+                        std::cout << index.deleteList.size() << std::endl;
+                    }
 
 //                std::cout << i + 1 << ": " << "(TRUE) " << trueNeighborVec[i] << " with distance "
 //                          << index.distance(trueNeighborNode, queryPoint) << " (FOUND) "
 //                          << foundNeighbor << " with distance " << index.distance(foundNeighborNode, queryPoint)
 //                          << std::endl;
 
-                // Count for recall
-                if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
-                    positiveCount++;
+                    // Count for recall
+                    if (trueNeighborSet.find(foundNeighbor) != trueNeighborSet.end()) {
+                        positiveCount++;
+                    }
                 }
-            }
-            double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
-            avgRecall += recall;
+                double recall = ((double) positiveCount / (double) NEIGHBOR_COUNT);
+                avgRecall += recall;
 //            std::cout << "recall@" << NEIGHBOR_COUNT << ": " << recall
 //                      << std::endl;
+            }
+            double progress = (double) cycle + ((double) removed.size() / removeThreshold);
+            avgRecall = (avgRecall / (double) N_TEST_POINTS);
+            std::cout << "progress: " << progress << " avg recall@" << NEIGHBOR_COUNT << ": " << avgRecall
+                      << std::endl;
+
+            // write to file
+            outfile << progress << "," << avgRecall << "\n";
         }
-        double progress = (double) cycle + ((double) removed.size() / removeThreshold);
-        avgRecall = (avgRecall / (double) N_TEST_POINTS);
-        std::cout << "progress: " << progress << " avg recall@" << NEIGHBOR_COUNT << ": " << avgRecall
-                  << std::endl;
 
-        // write to file
-
-        outfile << progress << "," << avgRecall << "\n";
 
         if (removed.size() >= removeThreshold) {
             std::cout << "Finished cycle " << cycle << " . Reinserting..." << std::endl;
