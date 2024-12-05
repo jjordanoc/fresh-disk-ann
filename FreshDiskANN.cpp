@@ -25,106 +25,6 @@ PrecisionLTI precisionLTI(FreshDiskANN::DEFAULT_FILE_PATH_PRECISION_LTI, FreshDi
 std::shared_ptr<FreshVamanaIndex> roTempIndex = std::make_shared<FreshVamanaIndex>(FreshDiskANN::DEFAULT_ALPHA, FreshDiskANN::DEFAULT_OUT_DEGREE_BOUND, FreshDiskANN::DEFAULT_DELETE_ACCUMULATION_FACTOR);
 std::shared_ptr<FreshVamanaIndex> rwTempIndex = std::make_shared<FreshVamanaIndex>(FreshDiskANN::DEFAULT_ALPHA, FreshDiskANN::DEFAULT_OUT_DEGREE_BOUND, FreshDiskANN::DEFAULT_DELETE_ACCUMULATION_FACTOR);
 
-//Metodos auxiliares
-
-double FreshDiskANN::distance(std::shared_ptr<GraphNode> node, std::shared_ptr<GraphNode> xq) {
-    double sum = 0.0;
-    for (size_t i = 0; i < node->features.size(); ++i) {
-        sum += std::pow(node->features[i] - xq->features[i], 2);
-    }
-    return std::sqrt(sum);
-}
-
-void FreshDiskANN::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::shared_ptr<GraphNode>> &v, double alpha, size_t outDegreeBound) {
-    //v ← (v ∪ 𝑁out(𝑝)) \ {𝑝}
-    for (auto neighbor: p->outNeighbors) {
-        if (std::find(v.begin(), v.end(), neighbor) == v.end()) {
-            v.push_back(neighbor);
-        }
-    }
-    v.erase(std::remove(v.begin(), v.end(), p), v.end());
-
-    //𝑁out(𝑝) <- ∅
-    p->outNeighbors.clear();
-
-    //while v != ∅:
-    while (!v.empty()) {
-        //p* <- argminp'∈𝑣{d(p, 𝑝')}
-        auto minIt = std::min_element(v.begin(), v.end(),
-                                      [&](std::shared_ptr<GraphNode> a, std::shared_ptr<GraphNode> b) {
-                                          return distance(p, a) < distance(p, b);
-                                      });
-        std::shared_ptr<GraphNode> pStar = *minIt;
-
-        //𝑁out(𝑝) <- 𝑁out(𝑝) ∪ {p*}
-        p->outNeighbors.push_back(pStar);
-
-        //if |𝑁out(𝑝)| = outDegreeBound: break
-        if (p->outNeighbors.size() == outDegreeBound) {
-            break;
-        }
-
-        //for p' ∈ 𝑣:
-        for (auto it = v.begin(); it != v.end();) {
-            std::shared_ptr<GraphNode> pPrime = *it;
-            //if d(p*, p') ≤ d(p,p')/alpha then remove p' from v
-            if (distance(pStar, pPrime) <= distance(p, pPrime) / alpha) {
-                it = v.erase(it);
-            } else {
-                ++it;
-            }
-        }
-    }
-}
-
-
-void FreshDiskANN::deleteConsolidation(std::vector<std::shared_ptr<GraphNode>> graph, std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deleteList) {
-    for (auto node: graph) {
-        // foreach p in P \ L_D (omit nodes in L_D)
-        if (deleteList.find(node) != deleteList.end()) {
-            continue;
-        }
-        // Nout(p) n L_D != {}
-        std::set<std::shared_ptr<GraphNode>> deletedNeighbors;
-        std::set_intersection(deleteList.begin(), deleteList.end(), node->outNeighbors.begin(),
-                              node->outNeighbors.end(), std::inserter(deletedNeighbors, deletedNeighbors.begin()));
-//        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
-//            return deleteList.find(outNeighbor) != deleteList.end();
-//        });
-        if (deletedNeighbors.empty()) {
-            continue;
-        }
-
-        // "C ← 𝑁out(𝑝) \ D" Inicializamos la lista de candidatos
-        std::set<std::shared_ptr<GraphNode>> candidateList;
-        for (auto outNeighbor: node->outNeighbors) {
-            // verify neighbor not in D
-            if (deletedNeighbors.find(outNeighbor) == deletedNeighbors.end()) {
-                candidateList.insert(outNeighbor);
-            }
-        }
-
-        // "foreach 𝑣 ∈ D do C ← C ∪ 𝑁out(𝑣)"
-        for (auto deletedNeighbor: deletedNeighbors) {
-            candidateList.insert(deletedNeighbor->outNeighbors.begin(), deletedNeighbor->outNeighbors.end());
-        }
-
-        // "C ← C \ D"
-        std::set<std::shared_ptr<GraphNode>> finalCandidateList;
-        std::set_difference(candidateList.begin(), candidateList.end(), deletedNeighbors.begin(),
-                            deletedNeighbors.end(), std::inserter(finalCandidateList, finalCandidateList.begin()));
-
-        auto candidates = std::vector(finalCandidateList.begin(), finalCandidateList.end());
-        robustPrune(node, candidates, alpha, outDegreeBound);
-    }
-    // update graph
-    auto removeIter = std::remove_if(graph.begin(), graph.end(), [this](std::shared_ptr<GraphNode> node){
-        return node->deleted;
-    });
-    graph.erase(removeIter, graph.end());
-}
-
-
 //Metodos
 void FreshDiskANN::insert(std::shared_ptr<GraphNode> p, size_t searchListSize, bool chooseRandom){
 
@@ -145,9 +45,15 @@ void FreshDiskANN::insert(std::shared_ptr<GraphNode> p, size_t searchListSize, b
 }
 
 void FreshDiskANN::deleteNode(std::shared_ptr<GraphNode> p) {
-    p -> deleted=true; //mark as deleted
+    p -> deleted=true; //este delete true, sirve mas que nada para que no aparezca en los resultados de busqueda
+    //usado mas que nada para que cuando se active en segundo plano el Delete Consolidation del rwTempIndex, el Delete Consolidation sepa a quien borrar.
     deleteList.insert(p); //add to delete list
 }
+
+// void FreshDiskANN::deleteNode(size_t id) {
+//     deleteList.insert(id);
+// }
+
 
 void FreshDiskANN::deletePhase(size_t maxBlockSize) {
 
@@ -173,6 +79,15 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
         return;
     }
 
+
+
+    //Revisames el DeleteList
+    // std::cout<<"DeleteList: "<<std::endl;
+    // for(auto node : nodesInBlock->deleteList){
+    //     std::cout<<node->id<<std::endl;
+    // }
+
+
     //Esto es lo que se puede paralelizar, dandole un block index a cada thread (y por lo tanto tengan su propio StartNode y EndNode)
     for (size_t blockIndex = 0; blockIndex < totalBlocks; ++blockIndex) {
         std::cout << "====================================" << std::endl;
@@ -185,7 +100,8 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
         std::cout << "Start Node: " << startNode << std::endl;
         std::cout << "End Node: " << endNode << std::endl<<std::endl;
 
-        std::vector<std::shared_ptr<GraphNode>> nodesInBlock;
+        std::shared_ptr<FreshVamanaIndex> nodesInBlock = std::make_shared<FreshVamanaIndex>(FreshDiskANN::DEFAULT_ALPHA, FreshDiskANN::DEFAULT_OUT_DEGREE_BOUND, FreshDiskANN::DEFAULT_DELETE_ACCUMULATION_FACTOR);
+        nodesInBlock->deleteList = deleteList;
 
         //Read each GraphNode from the block from the PrecisionLTI
         for (size_t nodeId = startNode; nodeId < endNode; ++nodeId) {
@@ -216,23 +132,85 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
             }
 
             auto node = std::make_shared<GraphNode>(id, features);
-            nodesInBlock.push_back(node);
 
-            //Retrieve neighbors
+            //Tengo que hacer esto, ya que al momento de haber guardado el elemento en el PrecisionLTI,  este todavia no habia sido marcado como eliminado
+            if (deleteList.find(node) != deleteList.end()) {
+                node->deleted = true;
+            }
+
+            //Itero sobre los vecinos
             for (const auto& neighborId : neighborIds) {
                 auto neighbor = precisionLTI->retrieveNode(neighborId);
+
+                if (deleteList.find(neighbor) != deleteList.end()) {
+                    neighbor->deleted = true;
+                }
+
+                //verifico si el vecino no esta en el grafo temporal
+                if (nodesInBlock->getNode(neighbor->id) == nullptr) {
+
+                    nodesInBlock->graph.push_back(neighbor);
+
+                    std::cout << "Adding neighbor: " << neighbor->id << " to the block" << std::endl;
+                }
+
                 node->outNeighbors.push_back(neighbor);
             }
+
+            std::cout << "Node : " << node->id << " | ";
+            std::cout << "Out-Neighbors: ";
+            for (const auto& neighbor : node->outNeighbors) {
+                std::cout << neighbor->id << " ";
+            }
+            std::cout << std::endl;
+
+
+
+
+
+            //Itero sobre los vecinos del nodo y veo primero si ya estan el grafo, de ser asi
+            // for (const auto& neighborId : neighborIds) {
+            //     auto neighbor = precisionLTI->retrieveNode(neighborId);
+            //     //Hago esto, ya que al momento de haber guardado el elemento en el PrecisionLTI,  este todavia no habia sido marcado como eliminado
+            //     if (deleteList.find(neighbor) != deleteList.end()) {
+            //         neighbor->deleted = true;
+            //     }
+            //     node->outNeighbors.push_back(neighbor);
+            // }
+
+            //nodesInBlock->insert(node); //No puedo hacer insert por que el algoritmo abre los nodos vecinos
+            //en este caso solo tengo vecinos de primer nivel. Pero cuando intente abrir los vecinos de mis vecinos
+            //no voy a poder.
+            //Insertamos el nodo en el grafo temporal
+
+            if (nodesInBlock->getNode(node->id) == nullptr) {
+                nodesInBlock->graph.push_back(node);
+            }
+            else {
+                //Reemplazar el nodo
+                nodesInBlock->replaceNode(node->id, node);
+            }
+
+            //printGraph(nodesInBlock->graph);
+
+
+            //Liberar nodo
+            node.reset();
+
         }
 
+        printGraph(nodesInBlock->graph);
 
         //Execute Algorithm 4 for the nodes in the block using multiple threads
-        deleteConsolidation(nodesInBlock, deleteList);
+        nodesInBlock->deleteConsolidation();
+
+        printGraph(nodesInBlock->graph);
 
         std::shared_ptr<GraphNode> retrievedNode;
 
         //Write the modified block back to SSD on the intermediateLTI
-        for (auto node : nodesInBlock) {
+        for (const auto& node : nodesInBlock->graph) {
+
             intermediateLTI->storeNode(node);
 
             retrievedNode = precisionLTI->retrieveNode(node->id);
@@ -289,12 +267,29 @@ void FreshDiskANN::deletePhase(size_t maxBlockSize) {
             std::cout<<"============================================="<<std::endl;
 
         }
-
-
-
     }
 
     file.close();
+}
+
+void FreshDiskANN::printGraph(std::vector<std::shared_ptr<GraphNode>>& graph) {
+    std::cout << std::endl;
+    for (auto node : graph) {
+        std::cout << node->id;
+        if (node->deleted) {
+            std::cout << "(D)";
+        }
+        std::cout << "-> ";
+        for (auto outNeighbor : node->outNeighbors) {
+            std::cout << outNeighbor->id;
+            if (outNeighbor->deleted) {
+                std::cout << "(D)";
+            }
+            std::cout << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }
 
 

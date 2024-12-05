@@ -7,28 +7,55 @@
 #include <unordered_map>
 #include <memory>
 #include <string>
+#include <faiss/IndexPQ.h>
+#include <faiss/AutoTune.h>
+#include <faiss/IndexFlat.h>
+#include <faiss/IndexPreTransform.h>
+#include <faiss/VectorTransform.h>
+#include <vector>
 #include "../GraphNode.h"
 
 class CompressedGraphNode {
 public:
-    int id;
+    int id;                              // ID único del nodo
     std::vector<uint8_t> compressedFeatures; // Compressed data (Product Quantization: 25-32 bytes)
 };
 
 class CompressedLTI {
 public:
-    std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;// Compressed points
+    // Mapa de nodos comprimidos
+    std::unordered_map<int, std::shared_ptr<CompressedGraphNode>> compressedGraphNodes;
 
-    //todo Puede que tal vez sea buena opcion que productQuantization este en FreshDiskANN.h
-    std::shared_ptr<CompressedGraphNode> productQuantization(std::shared_ptr<GraphNode> node, size_t maxBytes); // Compress a node (Product Quantization: 25-32 bytes)
+    // Cargar índice desde SSD
+    void loadFromSSD(const std::string& filePath);
 
-    void PQandStoreNode(std::shared_ptr<GraphNode> node, size_t maxBytes); // Compress a node and store it in CompressedLTI (Product Quantization: 25-32 bytes)
+    // Guardar índice en SSD
+    void saveToSSD(const std::string& filePath);
 
+    // Construcción del índice comprimido
+    void buildCompressedIndex(const std::vector<std::shared_ptr<GraphNode>>& dataset);
 
-    void loadDatasetCompressed( std::string csvPath, size_t maxBytes); // Load dataset (TEST)
+    std::vector<uint8_t> compressFeatures(const std::vector<double>& features);
 
+    // Calcular la distancia entre dos nodos
+    float distance(const std::vector<float>& query, int nodeId);
 
+    // Búsqueda k-NN en el índice comprimido
+    std::vector<int> knnSearch(const std::vector<float>& query, int k);
 
+    // Agregar nodos (almacenados temporalmente en TempIndex, no aplicados en tiempo real)
+    void addNode(int id, const std::vector<double>& data);
 
+    // Marcar nodos para eliminación
+    void markForDeletion(int id);
+
+    // Destructor
+    ~CompressedLTI() {
+        delete pqIndex;
+    }
+private:
+    faiss::IndexPQ* pqIndex;
+    std::vector<int> deleteList; // Lista de nodos marcados para eliminación
+    std::shared_ptr<CompressedGraphNode> compressGraphNode(const GraphNode& node, CompressedGraphNode& compressedNode); // Comprimir nodo
 };
 #endif //COMPRESSEDLTI_H

@@ -28,10 +28,12 @@ public:
     FreshVamanaIndex(const double alpha = DEFAULT_ALPHA, const size_t outDegreeBound = DEFAULT_OUT_DEGREE_BOUND, const double deleteAccumulationFactor = DEFAULT_DELETE_ACCUMULATION_FACTOR) : alpha(alpha), outDegreeBound(outDegreeBound), deleteAccumulationFactor(deleteAccumulationFactor) {}
 //    FreshVamanaIndex() : alpha(DEFAULT_ALPHA), outDegreeBound(DEFAULT_OUT_DEGREE_BOUND) {}
     void deleteConsolidation();
-    void deleteNode(std::shared_ptr<GraphNode> xp);
+    void deleteNode(std::shared_ptr<GraphNode> xp, bool activeDeleteConsolidation = true);
     void insert(std::shared_ptr<GraphNode> xp, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = false);
     std::vector<std::shared_ptr<GraphNode>> knnSearch(std::shared_ptr<GraphNode> query, size_t k, size_t searchListSize = DEFAULT_SEARCH_LIST_SIZE, bool chooseRandom = false);
     std::shared_ptr<GraphNode> getNode(size_t id);
+    void replaceNode(size_t id, std::shared_ptr<GraphNode> newNode);
+    bool isNodeDeleted(int nodeId);
     double distance(std::shared_ptr<GraphNode>node, std::shared_ptr<GraphNode>xq);
 
     std::vector<std::shared_ptr<GraphNode>> graph; //TODO: Cambiar a privado de nuevo
@@ -47,6 +49,7 @@ private:
     const double deleteAccumulationFactor;
 
 //    std::unordered_map<size_t, std::shared_ptr<GraphNode>> graph;
+
 };
 
 

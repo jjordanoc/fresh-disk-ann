@@ -66,6 +66,10 @@ void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours, std::sh
             }
             std::cout<<std::endl;
 
+
+
+
+
             //Guardamos en el PrecisionLTI
             diskANN->precisionLTI->storeNode(node);
 
@@ -88,23 +92,26 @@ void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours, std::sh
 
             //Insertamos en el rwTempIndex
             diskANN->rwTempIndex->insert(node);
+            //diskANN->rwTempIndex->graph.push_back(node);
+            //diskANN->printGraph(diskANN->rwTempIndex->graph);
 
             retrievedNode = diskANN->rwTempIndex->getNode(node->id);
-            if (retrievedNode != nullptr) {
-                std::cout << "rwTempIndex: Node ID: " << retrievedNode->id << " | ";
-                /*
-                std::cout << "Features: ";
-                for (const auto& feature : currentNode->features) {
-                    std::cout << feature << " ";
-                }
-                */
-                std::cout << "Out-Neighbors: ";
-                for (const auto& neighbor : retrievedNode->outNeighbors) {
-                    std::cout << neighbor->id << " ";
-                }
-                std::cout << std::endl;
-            }
+             if (retrievedNode != nullptr) {
+                 std::cout << "rwTempIndex: Node ID: " << retrievedNode->id << " | ";
+                 /*
+                 std::cout << "Features: ";
+                 for (const auto& feature : currentNode->features) {
+                     std::cout << feature << " ";
+                 }
+                 */
+                 std::cout << "Out-Neighbors: ";
+                 for (const auto& neighbor : retrievedNode->outNeighbors) {
+                     std::cout << neighbor->id << " ";
+                 }
+                 std::cout << std::endl;
+             }
 
+            /*
             //Insertamos en CompressedLTI
             diskANN->compressedLTI.PQandStoreNode(node, 5);
 
@@ -118,7 +125,7 @@ void loadDatasetAndStoreNodes(std::string csvPath, size_t maxNeighbours, std::sh
                 }
                 std::cout << std::endl;
             }
-
+            */
 
             //diskANN->insert(node);
             std::cout<<"============================================="<<std::endl;
@@ -158,23 +165,39 @@ int main() {
     std::cout<<"============================================="<<std::endl;
 
     //Insertamos los nodos del Dataset
-    loadDatasetAndStoreNodes("/Users/joaquin/Desktop/eda/freshdiskann/cmake-build-relwithdebinfo/siftsmall_base.csv", 10, diskANN, 10);
+    loadDatasetAndStoreNodes("C:/Users/Juan Pedro/Desktop/siftsmall_base.csv", 5, diskANN, 10);
 
 
     std::cout<<"============================================="<<std::endl;
-    std::cout<< "Ahora procedemos con la eliminacion de nodos" << std::endl;
+    std::cout<< "Ahora procedemos con la eliminacion de nodos en rwTempIndex" << std::endl;
     std::cout<<"============================================="<<std::endl;
+
+    //diskANN->printGraph(diskANN->rwTempIndex->graph);
 
     //Eliminamos un nodo
-    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(1));
-    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(5));
-    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(10));
+    //diskANN->deleteNode(diskANN->rwTempIndex->getNode(1), false);
+    //diskANN->deleteNode(diskANN->rwTempIndex->getNode(2), false);
+    //diskANN->deleteNode(diskANN->rwTempIndex->getNode(3), false);
 
-    //Revisames el DeleteList
-    std::cout<<"DeleteList: "<<std::endl;
-    for(auto node : diskANN->deleteList){
-        std::cout<<node->id<<std::endl;
-    }
+    // diskANN->rwTempIndex->deleteNode(diskANN->rwTempIndex->getNode(1), false);
+    // diskANN->rwTempIndex->deleteNode(diskANN->rwTempIndex->getNode(3), false);
+    // diskANN->rwTempIndex->deleteNode(diskANN->rwTempIndex->getNode(5), false);
+    //
+    // // Llama a la función deleteConsolidation
+    // diskANN->rwTempIndex->deleteConsolidation();
+    //
+    // diskANN->printGraph(diskANN->rwTempIndex->graph);
+
+    std::cout<<"============================================="<<std::endl;
+    std::cout<< "Ahora agregaremos nodos al DeleteList" << std::endl;
+    std::cout<<"============================================="<<std::endl;
+
+    //eliminar nodos con id 1, 3 y 5
+    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(1));
+    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(3));
+    diskANN->deleteNode(diskANN->precisionLTI->retrieveNode(5));
+
+
 
     std::cout<<"============================================="<<std::endl;
     std::cout<< "Ahora procedemos con el Streaming Merge" << std::endl;

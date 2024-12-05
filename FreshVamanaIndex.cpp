@@ -139,6 +139,19 @@ FreshVamanaIndex::greedySearch(std::shared_ptr<GraphNode> s, std::shared_ptr<Gra
                 expandedList.push_back(neighbor);
             }
         }
+        //Solo se agregan a expandedList los vecinos que ya están presentes en el grafo (graph).
+        // for (auto neighbor: pStar->outNeighbors) {
+        //     if (std::find_if(expandedList.begin(), expandedList.end(),
+        //                      [&neighbor](std::shared_ptr<GraphNode> expanded) {
+        //                          return expanded->id == neighbor->id;
+        //                      }) == expandedList.end() &&
+        //         std::find_if(graph.begin(), graph.end(), [&neighbor](std::shared_ptr<GraphNode> node) {
+        //             return node->id == neighbor->id;
+        //         }) != graph.end()) {
+        //         expandedList.push_back(neighbor);
+        //         }
+        // }
+
 
         //𝑉 <- 𝑉 ∪ {p*}
         candidateList.push_back(pStar);
@@ -252,13 +265,14 @@ FreshVamanaIndex::robustPrune(std::shared_ptr<GraphNode> p, std::vector<std::sha
     }
 }
 
-void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
+void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp, bool activeDeleteConsolidation) {
     // only mark as deleted
     xp->deleted = true;
     // add to delete list
     deleteList.insert(xp);
     // 1-10% of the index size
-    if (deleteAccumulationFactor * graph.size() <= deleteList.size()) {
+//    if (deleteAccumulationFactor * graph.size() <= deleteList.size()) {
+    if (activeDeleteConsolidation && deleteAccumulationFactor * graph.size() <= deleteList.size()) {
         std::cout << "Consolidating delete." << std::endl;
         std::cout << graph.size() << std::endl;
         std::cout << deleteList.size() << std::endl;
@@ -270,22 +284,28 @@ void FreshVamanaIndex::deleteNode(std::shared_ptr<GraphNode> xp) {
 void FreshVamanaIndex::deleteConsolidation() {
     for (auto node: graph) {
         // foreach p in P \ L_D (omit nodes in L_D)
-        if (deleteList.find(node) != deleteList.end()) {
+        // if (deleteList.find(node) != deleteList.end()) {
+        //     std::cout << "Skipping node " << node->id << std::endl;
+        //     continue;
+        // }
+        if (isNodeDeleted(node->id)) {
+//            std::cout << "Skipping node " << node->id << std::endl;
             continue;
         }
         // Nout(p) n L_D != {}
-        std::set<std::shared_ptr<GraphNode>> deletedNeighbors;
+        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> deletedNeighbors;
         std::set_intersection(deleteList.begin(), deleteList.end(), node->outNeighbors.begin(),
                               node->outNeighbors.end(), std::inserter(deletedNeighbors, deletedNeighbors.begin()));
 //        auto deletedNeighbors = std::find_if(node->outNeighbors.begin(), node->outNeighbors.end(), [this](std::shared_ptr<GraphNode> outNeighbor){
 //            return deleteList.find(outNeighbor) != deleteList.end();
 //        });
         if (deletedNeighbors.empty()) {
+//            std::cout<<"No tiene vecinos eliminados"<<std::endl;
             continue;
         }
 
         // "C ← 𝑁out(𝑝) \ D" Inicializamos la lista de candidatos
-        std::set<std::shared_ptr<GraphNode>> candidateList;
+        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> candidateList;
         for (auto outNeighbor: node->outNeighbors) {
             // verify neighbor not in D
             if (deletedNeighbors.find(outNeighbor) == deletedNeighbors.end()) {
@@ -299,11 +319,12 @@ void FreshVamanaIndex::deleteConsolidation() {
         }
 
         // "C ← C \ D"
-        std::set<std::shared_ptr<GraphNode>> finalCandidateList;
+        std::set<std::shared_ptr<GraphNode>, GraphNode::SharedPtrComp> finalCandidateList;
         std::set_difference(candidateList.begin(), candidateList.end(), deletedNeighbors.begin(),
                             deletedNeighbors.end(), std::inserter(finalCandidateList, finalCandidateList.begin()));
 
         auto candidates = std::vector(finalCandidateList.begin(), finalCandidateList.end());
+
         robustPrune(node, candidates, alpha, outDegreeBound);
     }
     // update graph
@@ -317,8 +338,21 @@ std::shared_ptr<GraphNode> FreshVamanaIndex::getNode(size_t id) {
     auto result = std::find_if(graph.begin(), graph.end(), [&id](std::shared_ptr<GraphNode> node){
         return node->id == id;
     });
-    return *result;
+    if (result != graph.end()) {
+        return *result;
+    } else {
+        return nullptr;
+    }
 }
+
+void FreshVamanaIndex::replaceNode(size_t id, std::shared_ptr<GraphNode> newNode){
+    auto result = std::find_if(graph.begin(), graph.end(), [&id](std::shared_ptr<GraphNode> node){
+        return node->id == id;
+    });
+    if (result != graph.end()) {
+        *result = newNode;
+    }
+};
 
 void FreshVamanaIndex::printGraph() {
     std::cout << std::endl;
@@ -338,4 +372,14 @@ void FreshVamanaIndex::printGraph() {
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+// Función auxiliar para verificar si un nodo está en la deleteList por su id
+bool FreshVamanaIndex::isNodeDeleted(int nodeId) {
+    for (const auto& node : deleteList) {
+        if (node->id == nodeId) {
+            return true;
+        }
+    }
+    return false;
 }
