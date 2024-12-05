@@ -18,7 +18,7 @@ int main() {
             OUT_DEGREE_BOUND = 37; // 64
     const double ALPHA = 1.2, // 1.2
     DELETE_ACCUMULATION_FACTOR = 0.04, // 0.1
-    PERCENTAGE_REMOVED = 0.5; // 0.05
+    PERCENTAGE_REMOVED = 0.1; // 0.05
 
     FreshVamanaIndex index(ALPHA, OUT_DEGREE_BOUND, DELETE_ACCUMULATION_FACTOR);
 
